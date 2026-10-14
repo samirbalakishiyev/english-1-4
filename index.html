@@ -1309,7 +1309,7 @@ let LASTLOG=0;
 function secLabel(r){ return `${r.g?grade(r.g).name:""}${r.u!=null?" · Unit "+(r.u+1):(VIEW.x?" · Əlavə":"")} · ${r.title}`; }
 function result(r){
   if (r.key){ const prev=S.prog[r.key]; S.prog[r.key]=Math.max(prev||0, r.pct); const at=Date.now();
-    S.log.push({sec:secLabel(r), g:`g${r.g}${r.u!=null?"u"+r.u:"x"}`, p:r.pct, r:r.score, n:r.n, at, sent:0}); if(S.log.length>120) S.log=S.log.slice(-120); LASTLOG=at; save(); if(REG){ qPush({a:'res',at,tel:REG.tel,ad:REG.ad,soyad:REG.soyad,sinif:PR.k||'',sec:secLabel(r),p:r.pct,r:r.score,n:r.n}); qFlush(); } }
+    S.log.push({sec:secLabel(r), g:`g${r.g}${r.u!=null?"u"+r.u:"x"}`, p:r.pct, r:r.score, n:r.n, at, sent:0}); if(S.log.length>120) S.log=S.log.slice(-120); LASTLOG=at; save(); }
   const medal = r.pct>=90?"🥇":r.pct>=70?"🥈":r.pct>=50?"🥉":"💪"; const stars = r.pct>=90?3:r.pct>=70?2:r.pct>=40?1:0;
   if (r.pct>=70){ sfx.win(); fireworks(4); }
   const m=document.createElement("div"); m.className="modal "+app.className;
@@ -1721,7 +1721,6 @@ function tLogin(){const v=($('#tcode')||{}).value;if(v===TCODE){TEA=true;tHome()
 function tHome(){
   app.innerHTML=thdr('Müəllim paneli','Bölməni seçin','')+(TMSG?`<p class="tmsg">${esc(TMSG)}</p>`:'')+`<div class="tasks">
    <button class="task done" onclick="TU.q='';tUsers()"><span class="ti">👥</span><span class="tt"><b>İstifadəçilər</b><small>Qeydiyyatdan keçənlər · zəng, WhatsApp, blok</small></span></button>
-   <button class="task done" onclick="TU.q='';tResults()"><span class="ti">📊</span><span class="tt"><b>Nəticələr</b><small>Google Cədvəldəki nəticələr</small></span></button>
    <button class="task done" onclick="tKey()"><span class="ti">🔑</span><span class="tt"><b>Cədvəl açarı</b><small>${lsGet('hc14-tkey','')?'Daxil edilib ✓':'Daxil edilməyib'}</small></span></button></div>
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
   window.scrollTo(0,0);

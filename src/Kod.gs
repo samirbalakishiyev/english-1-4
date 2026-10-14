@@ -1,5 +1,5 @@
 /* English 1–4 · Google Cədvəl skripti (Apps Script)
-   Qeydiyyat, son giriş, blok və nəticələr bu cədvəldə saxlanılır.
+   Qeydiyyat, son giriş və blok bu cədvəldə saxlanılır. Nəticələr cədvələ yazılmır.
    1) Aşağıdakı KEY-i öz gizli açarınızla dəyişin (məs: Samir-2026-xyz).
    2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone. */
 const KEY = 'BURAYA-OZ-ACARINIZI-YAZIN';
@@ -32,7 +32,6 @@ function doGet(e) {
   const p = e.parameter || {};
   if (p.key !== KEY) return out({ error: 'key' });
   if (p.a === 'users') return out({ rows: rows(sh('Users', UH)) });
-  if (p.a === 'results') return out({ rows: rows(sh('Results', RH)).slice(-3000) });
   return out({ error: 'a' });
 }
 
@@ -53,10 +52,6 @@ function doPost(e) {
       s.getRange(f.row, 2, 1, 3).setValues([[o.ad || f.val[1], o.soyad || f.val[2], o.rol || f.val[3]]]);
       s.getRange(f.row, 6).setValue(now);
       return out({ ok: true, blok: f.val[6] === true || String(f.val[6]).toUpperCase() === 'TRUE' });
-    }
-    if (o.a === 'res') {
-      sh('Results', RH).appendRow([o.at || now, "'" + (o.tel || ''), o.ad || '', o.soyad || '', o.sinif || '', o.sec || '', o.p || 0, o.r || 0, o.n || 0]);
-      return out({ ok: true });
     }
     if (o.a === 'block') {
       if (o.key !== KEY) return out({ ok: false, error: 'key' });
