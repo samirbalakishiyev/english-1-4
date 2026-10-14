@@ -337,6 +337,30 @@ textarea{font:inherit;width:100%;max-width:520px;min-height:120px;border-radius:
 .statrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .statrow div{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:10px;display:grid}
 .statrow b{font-size:24px;font-family:var(--display)}
+
+/* timer, find-all, books, phonics, puzzle */
+.timer{height:10px;border-radius:99px;background:var(--bads);overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--bad)}
+.findgrid{display:grid;grid-template-columns:repeat(4,minmax(0,64px));gap:10px;justify-content:center}
+.fcell{width:64px;height:64px;font-size:30px}
+.fcell.fok{background:var(--oks);border-color:var(--ok);box-shadow:0 4px 0 var(--ok);opacity:1}
+.fcell.fno{background:var(--bads);border-color:var(--bad);box-shadow:none;animation:shake .35s}
+.bookpage{width:min(560px,100%);min-height:320px;background:var(--paper);border:4px solid var(--tone);border-radius:26px;padding:22px;display:grid;justify-items:center;align-content:center;gap:14px;box-shadow:8px 8px 0 var(--tones);position:relative}
+.bpic{font-size:130px;line-height:1}
+.bpic .tx{font-size:60px}
+.btxt{font-family:var(--display);font-size:clamp(26px,6vw,38px);font-weight:800;text-align:center}
+.btxt mark{background:var(--sun);color:#22264B;border-radius:8px;padding:0 6px}
+.bnum{position:absolute;bottom:8px;right:14px;font-size:13px;color:var(--muted)}
+.bigletter{font-family:var(--display);font-size:110px;font-weight:800;line-height:1;background:var(--tones);color:var(--tone);border-radius:28px;padding:10px 28px;display:flex;gap:16px;align-items:baseline}
+.bigletter span{font-size:80px;color:var(--ink)}
+.bigletter.sm{font-size:72px;padding:6px 22px}
+.blend{display:grid;justify-items:center;gap:14px}
+.tile.bl{font-size:40px;min-width:70px;height:76px}
+.tile.vow{background:var(--sun);border-color:#E8A200;box-shadow:0 4px 0 #E8A200}
+.puzzle{display:grid;gap:3px;background:var(--line);padding:3px;border-radius:14px;max-width:100%}
+.ptile{position:relative;overflow:hidden;background:var(--paper);border-radius:6px;padding:0}
+.ptile span{position:absolute;width:240px;height:240px;font-size:190px;line-height:1;display:grid;place-items:center}
+.ptile.sel{outline:4px solid var(--tone);outline-offset:-4px;z-index:2}
 canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:800;z-index:70}
 footer{text-align:center;color:var(--muted);font-size:13px;padding-inline:16px;padding-block:0 30px}

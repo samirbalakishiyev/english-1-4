@@ -235,6 +235,7 @@ function unitTasks(g,u){
   const sb=[ quiz("point","👉","Listen and point",P?"Şəklə bax, düzgün sözü dinləyib seç":"Şəklə bax, sözü seç",()=>G.picWord(ws,8,g)) ];
   if (un.story) sb.push(T("story","📗","Story: "+un.story.t,"Hekayəni dinlə, sonra suallar",el=>runStory(el,{t:un.story.t,lines:un.story.lines,qs:null},k("story"),g)));
   if (un.read) sb.push(T("read","📗","Read: "+un.read.t,"Mətni oxu və dinlə, suallara cavab ver",el=>runRead(el,un.read,k("read"),g)));
+  sb.push(T("book","📚","Şəkilli kitab: "+BOOKPAT[g][u].t,"Kitabı dinlə və oxu, sonra oyna",el=>runBook(el,makeBook(g,u),k("book"),g)));
   sb.push(T("grammar","🎵","Grammar Chant","Dinlə, əl çal və təkrar et, sonra oyna",el=>runChant(el,un,g,k("grammar"))));
   sb.push(quiz("chat","💬","Happy Chat!","Suala uyğun cavabı seç",()=>G.chat(un.chat,g)));
   sb.push(T("memory","🧠","Play: Memory Game","Cütləri tap",el=>runMemory(el,ws,g,k("memory"))));
@@ -268,12 +269,14 @@ function unitTasks(g,u){
     quiz("potion","🧪","Magic Potions","İksir bişir, heyvanı çevir",P?()=>G.sentence(un.s,g,6):()=>G.enAz(ws,8),"potion"),
     quiz("ocean","🤿","Ocean Quest","Dənizin dibinə en, xəzinəni tap",()=>P?G.tf(ws,g,8):G.chat(un.chat,g).concat(G.picWord(ws,4,g)),"ocean"),
     quiz("bubble","🫧","Bubble Pop","Düzgün qabarcığı partlat",()=>G.listenPic(ws,8),"bubble"),
-    quiz("alien","👽",P?"Alien Friends":"Alien Spelling",P?"Yadplanetlini dinlə, şəkli seç":"Yadplanetliyə sözü yazmağa kömək et",()=>P?G.listenPic(ws,8):G.spell(ws,6),"alien")]});
+    quiz("alien","👽",P?"Alien Friends":"Alien Spelling",P?"Yadplanetlini dinlə, şəkli seç":"Yadplanetliyə sözü yazmağa kömək et",()=>P?G.listenPic(ws,8):G.spell(ws,6),"alien"),
+    T("puzzle","🧩","Fix the Picture","Şəkli hissələrdən düzəlt",el=>runPuzzle(el,ws,g,k("puzzle"))),
+    T("race","🏁","Sound Race","Vaxta qarşı: dinlə və tap!",el=>runQuiz(el,{title:"Sound Race",ins:"Hər sual üçün "+(P?7:6)+" saniyə var. Tez ol!",qs:G.listenPic(ws,10),key:k("race"),g,u,timer:P?7:6}))]});
   sec.push({id:"test",h:"🏆 Unit testi",sub:"Unitin yekun testi",tasks:[quiz("test","🏆","Unit "+(u+1)+" testi","15 sual · bütün unit",()=>mixTest(g,u,15))]});
   return sec;
 }
 function taskCard(t){ const sc=S.prog[t.key]; return `<button class="task ${sc!=null?"done":""}" data-task="${t.id}"><span class="ti">${t.ic}</span><span class="tt"><b>${esc(t.name)}</b><small>${esc(t.sub)}</small></span><span class="ts">${sc!=null?sc+"%":"Başla"}</span></button>`; }
-const SEC_COL = {voc:"#FF7A2F",sb:"#2F7BFF",wb:"#1FAE69",ex:"#9A4DF0",gm:"#F0418C",vid:"#E5312D",test:"#E8A200",st:"#16A3B8",tx:"#2F7BFF",gr:"#9A4DF0",big:"#F0418C",abc:"#FF7A2F",bigtest:"#E8A200",tools:"#1FAE69"};
+const SEC_COL = {lib:"#16A3B8",phon:"#FF7A2F",voc:"#FF7A2F",sb:"#2F7BFF",wb:"#1FAE69",ex:"#9A4DF0",gm:"#F0418C",vid:"#E5312D",test:"#E8A200",st:"#16A3B8",tx:"#2F7BFF",gr:"#9A4DF0",big:"#F0418C",abc:"#FF7A2F",bigtest:"#E8A200",tools:"#1FAE69"};
 function secTile(s, cnt, done, go_){ const c=SEC_COL[s.id]||"#2F7BFF"; const p=cnt?Math.round(done*100/cnt):0;
   return `<button class="stile" style="--sc:${c}" data-go='${JSON.stringify(go_)}'><span class="sic">${s.h.split(" ")[0]}</span><b>${esc(s.h.split(" ").slice(1).join(" "))}</b><small>${esc(s.sub)}</small>${cnt!=null?`<span class="sbar"><i style="width:${p}%"></i></span><span class="scount">${done}/${cnt}</span>`:""}</button>`; }
 function unitVideos(g,u){ return (UNIT_TOPICS[g][u]||[]).map(t=>[t,VIDS[t]||[]]); }
@@ -335,11 +338,14 @@ function runQuiz(el, cfg){
   const qs = cfg.qs.filter(Boolean); const n=qs.length; let i=0, score=0;
   if(!n){ el.innerHTML = header(el,cfg.title,cfg.ins)+`<p>Bu unit üçün bu tapşırıq yoxdur.</p>`; return; }
   const skin = cfg.skin ? Object.create(SKINS[cfg.skin]) : null;
-  el.innerHTML = header(el,cfg.title,cfg.ins) + (skin?skin.mount(n):"") + `<div class="stage" id="stg"></div><div class="feedback" id="fb"></div>`;
-  const stg=$("#stg",el), fb=$("#fb",el);
+  el.innerHTML = header(el,cfg.title,cfg.ins) + (skin?skin.mount(n):"") + (cfg.timer?`<div class="timer"><i id="tmr"></i></div>`:"") + `<div class="stage" id="stg"></div><div class="feedback" id="fb"></div>`;
+  const stg=$("#stg",el), fb=$("#fb",el); let lock=false, tmr=null;
   function upd(){ $("#qc",el).textContent=`${Math.min(i+1,n)}/${n}`; $("#sc",el).textContent="⭐ "+score; $("#pg",el).style.width=(i*100/n)+"%"; }
-  function next(){ if(i>=n) return finish(); upd(); fb.textContent=""; fb.className="feedback"; if(skin&&skin.before) skin.before(i); show(qs[i]); }
-  function answered(ok, correctText){ if(ok){ score++; sfx.ok(); fb.textContent=["Əla! 🎉","Super! ⭐","Afərin! 👏","Düzdür! ✅"][rnd(4)]; fb.className="feedback ok"; if(n<=10||score%3===0) fireworks(1); }
+  function next(){ if(!el.isConnected) return; if(i>=n) return finish(); upd(); lock=false; fb.textContent=""; fb.className="feedback"; if(skin&&skin.before) skin.before(i); show(qs[i]);
+    if(cfg.timer){ const bar=$("#tmr",el); bar.style.transition="none"; bar.style.width="100%"; void bar.offsetWidth; bar.style.transition=`width ${cfg.timer}s linear`; bar.style.width="0%"; clearTimeout(tmr);
+      tmr=setTimeout(()=>{ if(lock) return; stg.querySelectorAll("button").forEach(b=>b.disabled=true); const q=qs[i]; const ok=q.opts&&q.opts.find(o=>o.ok); fb.textContent="⏰ Vaxt bitdi!"; answered(false, ok&&(ok.t||ok.w||"")); }, cfg.timer*1000); } }
+  function answered(ok, correctText){ if(lock) return; lock=true; clearTimeout(tmr); if(cfg.timer){ const bar=$("#tmr",el); const w=getComputedStyle(bar).width; bar.style.transition="none"; bar.style.width=w; }
+      if(ok){ score++; sfx.ok(); fb.textContent=["Əla! 🎉","Super! ⭐","Afərin! 👏","Düzdür! ✅"][rnd(4)]; fb.className="feedback ok"; if(n<=10||score%3===0) fireworks(1); }
       else { sfx.bad(); fb.innerHTML="Səhv 😕"+(correctText?` · Düzgün: <b>${esc(correctText)}</b>`:""); fb.className="feedback no"; }
       if(skin) skin.after(ok); $("#sc",el).textContent="⭐ "+score; i++; setTimeout(next, ok?1000:1700); }
   function finish(){ $("#pg",el).style.width="100%"; const pct=Math.round(score*100/n); result({key:cfg.key, title:cfg.title, g:cfg.g, u:cfg.u, score, n, pct, retry:()=>runQuiz(el,Object.assign({},cfg,{qs:cfg.regen?cfg.regen():shuffle(cfg.qs)}))}); }
@@ -348,6 +354,15 @@ function runQuiz(el, cfg){
     if(q.k==="spell"||q.k==="missing") return showSpell(q);
     if(q.k==="type") return showType(q);
     if(q.k==="build") return showBuild(q);
+    if(q.k==="findall") return showFindAll(q);
+  }
+  function showFindAll(q){
+    stg.innerHTML = promptHTML(q) + `<div class="findgrid">${q.cells.map((c,j)=>`<button class="tile fcell" data-j="${j}">${esc(c)}</button>`).join("")}</div><div class="paz" id="fleft"></div>`;
+    bindSay(q); let need=q.cells.filter(c=>c===q.target).length, got=0, miss=0;
+    const left=()=>$("#fleft",el).textContent=`Qaldı: ${need-got}`; left();
+    stg.querySelectorAll(".fcell").forEach(b=>b.onclick=()=>{ if(b.disabled) return; b.disabled=true;
+      if(q.cells[+b.dataset.j]===q.target){ got++; b.classList.add("fok"); tone(880,.08,"sine",.07); speak(q.say||q.target); left(); if(got===need) answered(miss<=1); }
+      else { miss++; b.classList.add("fno"); sfx.bad(); } });
   }
   function promptHTML(q){ const p=q.prompt||{}; return `<div class="prompt">${q.say?`<button class="say" id="sayb" aria-label="Dinlə">🔊</button>`:""}${p.p?pic(p.p,"bigpic"):""}${p.html||""}${p.text&&!(p.small&&q.say&&false)?`<div class="pq" style="${p.small?"font-size:18px;color:var(--muted)":""}">${esc(p.text)}</div>`:""}${p.az?`<div class="paz">${esc(p.az)}</div>`:""}</div>`; }
   function bindSay(q){ const b=$("#sayb",el); if(b){ b.onclick=()=>speak(q.say); setTimeout(()=>speak(q.say),250); } }
@@ -677,6 +692,8 @@ function extraTasks(g){
     quiz("alien","👽",P?"Alien Friends":"Alien Spelling",P?"Dinlə və tap":"Sözü yaz",()=>P?G.listenPic(ws,10):G.spell(ws,8),"alien"),
     T("memory","🧠","Memory Game","Cütləri tap",el=>runMemory(el,ws,g,k("memory"))),
     ...(P?[]:[T("search","🔎","Word search","Sözləri tap",el=>runSearch(el,ws,k("search")))])]});
+  sec.splice(1,0,{id:"lib",h:"📚 Kitabxana",sub:"Bütün unitlərin şəkilli kitabları",tasks:grade(g).units.map((un,u)=>{ const b=BOOKPAT[g][u]; return T("bk"+u,un.e,b.t,"Unit "+(u+1)+" · oxu, dinlə, oyna",el=>runBook(el,makeBook(g,u),k("bk"+u),g)); })});
+  if (g<=2) sec.push({id:"phon",h:"🔤 Fonika yolu",sub:"A–Z hərf səsləri və CVC sözləri",tasks:[...Object.keys(PH).map(L=>T("ph"+L,L.toUpperCase()+L,"Hərf "+L.toUpperCase()+" "+L,PH[L].map(x=>x[0]).join(", "),el=>runLetter(el,L,k("ph"+L),g))), ...CVC.map((c,ci)=>T("cvc"+ci,"🔗","Blend: "+c.t,c.w.map(x=>x[0]).join(", "),el=>runCVC(el,c,k("cvc"+ci),g)))]});
   if (g<=2) sec.push({id:"abc",h:"🔤 Əlifba",sub:"Hərflər və səslər",tasks:[T("abc","🔤","ABC kartları","26 hərf, söz və səs",el=>runABC(el,k("abc"))), quiz("abcq","🅰️","İlk hərfi tap","Sözü dinlə, hərfi seç",()=>abcQs(10))]});
   sec.push({id:"bigtest",h:"🧠 Ümumi test",sub:"Bütün sinif üzrə 25 sual",tasks:[quiz("bigtest","🏅","Böyük test","25 sual · bütün unitlər",()=>mixTest(g,null,25))]});
   sec.push({id:"tools",h:"🧰 Sinif alətləri",sub:"Müəllim üçün: dərsdə istifadə et",tasks:[T("namewheel","🎡","Ad çarxı","Təsadüfi şagird seç",el=>runNameWheel(el)),T("dice","🎲","Zər","Rəqəmləri ingiliscə de",el=>runDice(el)),T("groups","👥","Qrup bölücü","Sinfi qruplara böl",el=>runGroups(el))]});
