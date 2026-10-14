@@ -1,76 +1,93 @@
 /* English 1–4 · Google Cədvəl skripti (Apps Script)
-   Qeydiyyat, son giriş və blok bu cədvəldə saxlanılır. Nəticələr cədvələ yazılmır.
+   Qeydiyyat, son giriş, blok və "əlaqə saxlanılıb" bu cədvəldə saxlanılır. Nəticələr cədvələ yazılmır.
    1) Aşağıdakı KEY-i öz gizli açarınızla dəyişin (məs: Samir-2026-xyz).
-   2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone. */
+   2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone (Все). */
 const KEY = 'BURAYA-OZ-ACARINIZI-YAZIN';
 
-const UH = ['tel', 'ad', 'soyad', 'rol', 'qeyd', 'son', 'blok', 'sayt', 'elaqe'];
-const RH = ['at', 'tel', 'ad', 'soyad', 'sinif', 'sec', 'p', 'r', 'n'];
-
-function sh(name, head) {
-  const ss = SpreadsheetApp.getActive();
-  let s = ss.getSheetByName(name);
-  if (!s) { s = ss.insertSheet(name); s.appendRow(head); s.setFrozenRows(1); }
-  if (s.getLastColumn() < head.length) s.getRange(1, 1, 1, head.length).setValues([head]);
-  return s;
-}
 function out(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
-function rows(s) {
-  const v = s.getDataRange().getValues();
-  const h = v.shift();
-  return v.map(r => { const o = {}; h.forEach((k, i) => o[k] = r[i]); o.tel = String(o.tel || ''); return o; });
+/* ---------- Users vərəqi (oxunaqlı başlıqlar, tarixlər, blok qutucuqları) ---------- */
+const UL = ['Telefon', 'Ad', 'Soyad', 'Rol', 'Qeydiyyat tarixi', 'Son giriş', 'Bloklanıb', 'Sayt', 'Əlaqə saxlanılıb'];
+const DF = 'dd.mm.yyyy hh:mm';
+const isTrue = x => x === true || String(x).toUpperCase() === 'TRUE';
+const ms = x => x instanceof Date ? x.getTime() : (+x || '');
+const asDate = x => (typeof x === 'number' && x > 1e11) ? new Date(x) : x;
+
+function usersSheet() {
+  const ss = SpreadsheetApp.getActive();
+  let s = ss.getSheetByName('Users');
+  if (!s) { s = ss.insertSheet('Users'); s.setFrozenRows(1); }
+  const h = s.getRange(1, 1, 1, UL.length);
+  if (String(h.getValues()[0].join('|')) !== UL.join('|')) h.setValues([UL]).setFontWeight('bold');
+  return s;
 }
-function findRow(s, tel) {
-  const v = s.getDataRange().getValues();
-  for (let i = 1; i < v.length; i++) if (String(v[i][0]) === String(tel)) return { row: i + 1, val: v[i] };
-  return null;
+/* köhnə sətirləri düzəldir: uzun rəqəmlər → tarix, TRUE/FALSE → qutucuq */
+function usersFix(s) {
+  const n = s.getLastRow() - 1;
+  if (n < 1) return;
+  const rg = s.getRange(2, 1, n, UL.length), v = rg.getValues();
+  let ch = false;
+  v.forEach(r => { [4, 5, 8].forEach(j => { const d = asDate(r[j]); if (d !== r[j]) { r[j] = d; ch = true; } }); const b = isTrue(r[6]); if (r[6] !== b) { r[6] = b; ch = true; } });
+  if (ch) rg.setValues(v);
+  s.getRange(2, 5, n, 2).setNumberFormat(DF);
+  s.getRange(2, 9, n, 1).setNumberFormat(DF);
+  s.getRange(2, 7, n, 1).insertCheckboxes();
+}
+function usersRows(s) {
+  usersFix(s);
+  const v = s.getDataRange().getValues(); v.shift();
+  return v.filter(r => r[0] !== '').map(r => ({ tel: String(r[0]), ad: r[1], soyad: r[2], rol: r[3], qeyd: ms(r[4]), son: ms(r[5]), blok: isTrue(r[6]), sayt: r[7], elaqe: ms(r[8]) }));
+}
+function userRow(s, tel) {
+  const n = s.getLastRow();
+  if (n < 2) return 0;
+  const v = s.getRange(2, 1, n - 1, 1).getValues();
+  for (let i = 0; i < v.length; i++) if (String(v[i][0]) === String(tel)) return i + 2;
+  return 0;
+}
+function userPing(o, now) {
+  const s = usersSheet();
+  const r = userRow(s, o.tel);
+  if (!r) {
+    s.appendRow(["'" + (o.tel || ''), o.ad || '', o.soyad || '', o.rol || '', new Date(+o.qeyd || now), new Date(now), false, o.sayt || '', '']);
+    const lr = s.getLastRow();
+    s.getRange(lr, 5, 1, 2).setNumberFormat(DF);
+    s.getRange(lr, 7).insertCheckboxes();
+    return { ok: true, blok: false };
+  }
+  const val = s.getRange(r, 1, 1, 7).getValues()[0];
+  s.getRange(r, 2, 1, 3).setValues([[o.ad || val[1], o.soyad || val[2], o.rol || val[3]]]);
+  s.getRange(r, 6).setValue(new Date(now)).setNumberFormat(DF);
+  return { ok: true, blok: isTrue(val[6]) };
+}
+function userSet(o, now) {
+  const s = usersSheet();
+  const r = userRow(s, o.tel);
+  if (!r) return { ok: false, error: 'tel' };
+  if (o.a === 'block') { s.getRange(r, 7).insertCheckboxes().setValue(!!o.v); return { ok: true }; }
+  s.getRange(r, 9).setValue(o.v ? new Date(now) : '').setNumberFormat(DF);
+  return { ok: true, t: o.v ? now : '' };
 }
 
-/* Müəllim paneli oxuyur: ?a=users&key=… və ya ?a=results&key=… */
+/* Müəllim paneli oxuyur: ?a=users&key=… */
 function doGet(e) {
   const p = e.parameter || {};
   if (p.key !== KEY) return out({ error: 'key' });
-  if (p.a === 'users') return out({ rows: rows(sh('Users', UH)) });
+  if (p.a === 'users') return out({ rows: usersRows(usersSheet()) });
   return out({ error: 'a' });
 }
 
-/* Sayt yazır: ping (qeydiyyat + son giriş + blok yoxlaması), res (nəticə), block (müəllim) */
+/* Sayt yazır: ping (qeydiyyat + son giriş + blok yoxlaması), block və elaqe (müəllim) */
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const o = JSON.parse(e.postData.contents || '{}');
     const now = Date.now();
-    if (o.a === 'ping') {
-      const s = sh('Users', UH);
-      const f = findRow(s, o.tel);
-      if (!f) {
-        s.appendRow(["'" + (o.tel || ''), o.ad || '', o.soyad || '', o.rol || '', o.qeyd || now, now, false, o.sayt || '']);
-        return out({ ok: true, blok: false });
-      }
-      s.getRange(f.row, 2, 1, 3).setValues([[o.ad || f.val[1], o.soyad || f.val[2], o.rol || f.val[3]]]);
-      s.getRange(f.row, 6).setValue(now);
-      return out({ ok: true, blok: f.val[6] === true || String(f.val[6]).toUpperCase() === 'TRUE' });
-    }
-    if (o.a === 'elaqe') {
-      if (o.key !== KEY) return out({ ok: false, error: 'key' });
-      const s = sh('Users', UH);
-      const f = findRow(s, o.tel);
-      if (!f) return out({ ok: false, error: 'tel' });
-      const t = o.v ? now : '';
-      s.getRange(f.row, 9).setValue(t);
-      return out({ ok: true, t: t });
-    }
-    if (o.a === 'block') {
-      if (o.key !== KEY) return out({ ok: false, error: 'key' });
-      const s = sh('Users', UH);
-      const f = findRow(s, o.tel);
-      if (!f) return out({ ok: false, error: 'tel' });
-      s.getRange(f.row, 7).setValue(!!o.v);
-      return out({ ok: true });
-    }
+    if (o.a === 'ping') return out(userPing(o, now));
+    if (o.key !== KEY) return out({ ok: false, error: 'key' });
+    if (o.a === 'block' || o.a === 'elaqe') return out(userSet(o, now));
     return out({ ok: false, error: 'a' });
   } finally {
     lock.releaseLock();
