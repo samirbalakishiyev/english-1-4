@@ -20,7 +20,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const rnd = n => Math.floor(Math.random()*n);
 const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 const take = (a,n) => shuffle(a).slice(0,n);
-const W = w => ({en:w[0], az:w[1], p:w[2]});
+const W = w => ({en:w[0], az:w[1], p:w[2], ru:(typeof RU!=='undefined'&&RU[w[0]])||''});
+const tr = w => w.ru ? w.az+' · '+w.ru : w.az;
 const isText = p => typeof p === "string" && /^[\x20-\x7E]+$/.test(p) && !p.startsWith("c:") && !p.startsWith("#");
 const NUMW = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
 const TENS = {20:"twenty",30:"thirty",40:"forty",50:"fifty",60:"sixty",70:"seventy",80:"eighty",90:"ninety",100:"one hundred"};
@@ -85,7 +86,7 @@ const unit = (g,u) => grade(g).units[u];
 const words = (g,u) => unit(g,u).w.map(W);
 const allWords = g => grade(g).units.flatMap((x,i)=>x.w.map(w=>Object.assign(W(w),{u:i})));
 const pre = g => g===1;  // 1-ci sinif: oxumadan, səs və şəkil ilə
-function distract(w, pool, n){ return take(pool.filter(x=>x.en!==w.en && x.p!==w.p && x.az!==w.az), n); }
+function distract(w, pool, n){ return take(dedupe(shuffle(pool.filter(x=>x.en!==w.en && x.p!==w.p && x.az!==w.az)),x=>x.p), n); }
 function dedupe(arr, f){ const s=new Set(); return arr.filter(x=>{ const k=f(x); if(s.has(k)) return false; s.add(k); return true; }); }
 
 /* şəkli konkret olmayan cümlələr (sual, bəli/xeyr) 1-ci sinifdə şəkil seçimində işlənmir */
@@ -94,16 +95,20 @@ const ABSTRACT = new Set(["❓","👍","👎","🎂","🎨","👋","🫡","🔤"
 const G = {
   listenPic(ws, n=8){ return take(ws,n).map(w=>({k:"choice", say:w.en, prompt:{text:"🔊 Dinlə və şəkli tap", small:true}, layout:"pic",
       opts:shuffle([{p:w.p, ok:true}, ...distract(w,ws,3).map(d=>({p:d.p}))])})); },
-  picWord(ws, n=8, g=2){ return take(ws,n).map(w=>({k:"choice", prompt:{p:w.p, az: pre(g)?"":""}, layout:"txt",
-      opts:shuffle([{t:w.en, ok:true, sp:pre(g)}, ...distract(w,ws,pre(g)?2:3).map(d=>({t:d.en, sp:pre(g)}))])})); },
+  picWord(ws, n=8, g=2){ const real=w=>!isText(w.p); return take(ws,n).map((w,i)=>{
+      const pool=dedupe(ws.filter(x=>x.en!==w.en),x=>x.p);
+      if (pre(g) || i%2===0 || !/^[a-z' -]+$/i.test(w.en)) return {k:"choice", say:w.en, prompt:{text:"🔊 Dinlə və şəkli göstər", small:true}, layout:"pic",
+        opts:shuffle([{p:w.p, ok:true}, ...take(pool.filter(x=>x.p!==w.p),pre(g)?2:3).map(d=>({p:d.p}))])};
+      return {k:"choice", say:w.en, prompt:{text:"🔊 Dinlə və eşitdiyin sözü seç", small:true}, layout:"txt two",
+        opts:shuffle([{t:w.en, ok:true}, ...take(ws.filter(x=>x.en!==w.en),3).map(d=>({t:d.en}))])}; }); },
   wordPic(ws, n=8){ return take(ws,n).map(w=>({k:"choice", say:w.en, prompt:{text:w.en}, layout:"pic",
       opts:shuffle([{p:w.p, ok:true}, ...distract(w,ws,3).map(d=>({p:d.p}))])})); },
-  azPic(ws, n=8){ return take(ws,n).map(w=>({k:"choice", prompt:{text:w.az, az:"Azərbaycanca söz → şəkli tap"}, layout:"pic",
+  azPic(ws, n=8){ return take(ws,n).map(w=>({k:"choice", prompt:{text:tr(w), az:"Azərbaycanca söz → şəkli tap"}, layout:"pic",
       opts:shuffle([{p:w.p, ok:true}, ...distract(w,ws,3).map(d=>({p:d.p}))])})); },
-  azEn(ws, n=8){ return take(ws,n).map(w=>({k:"choice", prompt:{text:w.az, az:"İngiliscəsini seç"}, layout:"txt",
+  azEn(ws, n=8){ return take(ws,n).map(w=>({k:"choice", prompt:{text:tr(w), az:"İngiliscəsini seç"}, layout:"txt",
       opts:shuffle([{t:w.en, ok:true}, ...distract(w,ws,3).map(d=>({t:d.en}))])})); },
   enAz(ws, n=8){ return take(ws,n).map(w=>({k:"choice", say:w.en, prompt:{text:w.en, p:w.p, az:"Tərcüməsini seç"}, layout:"txt",
-      opts:shuffle([{t:w.az, ok:true}, ...distract(w,ws,3).map(d=>({t:d.az}))])})); },
+      opts:shuffle([{t:tr(w), ok:true}, ...distract(w,ws,3).map(d=>({t:tr(d)}))])})); },
   sentence(ss, g, n=6){
     const S2 = ss.map(s=>({en:s[0], az:s[1], p:s[2]}));
     if (pre(g)) { const ok = dedupe(S2.filter(s=>!ABSTRACT.has(s.p)), s=>s.p); if (ok.length<3) return []; return take(ok, n).map(s=>({k:"choice", say:s.en, prompt:{text:"🔊 Cümləni dinlə və şəkli seç", small:true}, layout:"pic",
@@ -135,9 +140,9 @@ const G = {
         const wr = distract(hit, ws, 2).map(d=> m.toLowerCase().endsWith("s")&&!hit.en.endsWith("s") ? d.en+"s" : d.en);
         res.push({k:"choice", say:en, prompt:{text:en.replace(re,"_____"), az:s[1]}, layout:"txt", opts:shuffle([{t:m, ok:true}, ...wr.map(t=>({t}))])}); }
       if (res.length>=n) break; } return res; },
-  spell(ws, n=6){ return take(ws.filter(w=>/^[a-z]+$/i.test(w.en) && w.en.length<=10 && w.en.length>=3), n).map(w=>({k:"spell", word:w.en.toLowerCase(), p:w.p, az:w.az})); },
-  missing(ws, n=6){ return take(ws.filter(w=>/^[a-z -]+$/i.test(w.en) && w.en.replace(/[^aeiou]/gi,"").length>=1 && w.en.length>=3), n).map(w=>({k:"missing", word:w.en.toLowerCase(), p:w.p, az:w.az})); },
-  type(ws, n=6){ return take(ws.filter(w=>w.en.length<=14), n).map(w=>({k:"type", word:w.en, p:w.p, az:w.az})); },
+  spell(ws, n=6){ return take(ws.filter(w=>/^[a-z]+$/i.test(w.en) && w.en.length<=10 && w.en.length>=3), n).map(w=>({k:"spell", word:w.en.toLowerCase(), p:w.p, az:tr(w)})); },
+  missing(ws, n=6){ return take(ws.filter(w=>/^[a-z -]+$/i.test(w.en) && w.en.replace(/[^aeiou]/gi,"").length>=1 && w.en.length>=3), n).map(w=>({k:"missing", word:w.en.toLowerCase(), p:w.p, az:tr(w)})); },
+  type(ws, n=6){ return take(ws.filter(w=>w.en.length<=14), n).map(w=>({k:"type", word:w.en, p:w.p, az:tr(w)})); },
   build(ss, n=6){ return take(ss.filter(s=>s[0].split(" ").length>=3 && s[0].split(" ").length<=9), n).map(s=>({k:"build", tokens:s[0].split(" "), az:s[1], p:s[2], en:s[0]})); },
   math(g, n=6){ const res=[]; const hi = g===4?100:(g===2?20:10);
     for(let i=0;i<n;i++){ let a,b; if(hi===100){ a=(1+rnd(5))*10; b=(1+rnd(4))*10; } else { a=1+rnd(hi/2); b=1+rnd(hi/2); } const c=a+b;
@@ -156,6 +161,54 @@ const G = {
   storyPics(lines){ const L=dedupe(lines.map(l=>({en:l[0],p:l[2]})).filter(l=>!isText(l.p) && !ABSTRACT.has(l.p)), l=>l.p);
     return take(L, Math.min(5,L.length)).map(l=>({k:"choice", say:l.en, prompt:{text:"🔊 Cümləni dinlə və şəkli seç", small:true}, layout:"pic", opts:shuffle([{p:l.p,ok:true}, ...take(L.filter(x=>x.p!==l.p),2).map(d=>({p:d.p}))])})); }
 };
+
+/* ===== yenilənmiş çalışmalar: Round Up, Odd one out, Fill the gap, Arrange the letters ===== */
+const realPic = w => w.p && !isText(w.p) && !w.p.startsWith("c:") && !w.p.startsWith("#");
+function unitSentences(un){ const out=[]; const add=(en,az)=>{ en=String(en||"").trim(); if(en && en.split(" ").length>=3 && !out.some(x=>x[0]===en)) out.push([en,az||""]); };
+  (un.s||[]).forEach(x=>add(x[0],x[1])); (un.chat||[]).forEach(c=>{ add(c[0]); add(c[1]); });
+  if(un.story) un.story.lines.forEach(l=>add(l[0],l[1]));
+  if(un.read) un.read.text.split(/(?<=[.!?])\s+/).forEach(x=>add(x));
+  return out; }
+const GSETS=[["am","is","are"],["has","have"],["do","does"],["was","were"],["a","an"],["this","these"],["that","those"],["there's","there are"]];
+Object.assign(G, {
+  roundup(ws, g, n=10){ const P=pre(g); const parts=[...G.count(ws,g,3), ...G.tf(ws,g,3), ...G.listenPic(ws,2), ...(P?G.listenPic(ws,2):G.wordPic(ws,2))];
+    let extra=0; while(parts.length<n && extra++<20) parts.push(...(extra%2?G.tf(ws,g,1):G.listenPic(ws,1))); return shuffle(parts).slice(0,n); },
+  odd2(g, u, n=8){ const units=grade(g).units.map((x,i)=>({i,ws:x.w.map(W)})); const res=[]; const P=pre(g);
+    const picUnits=units.filter(x=>dedupe(x.ws.filter(realPic),w=>w.p).length>=3);
+    const txtUnits=units.filter(x=>x.ws.filter(w=>/^[a-z' -]+$/i.test(w.en)).length>=3);
+    for(let k=0;k<n*3 && res.length<n;k++){
+      const usePic = P || k%2===0;
+      const pool = usePic ? picUnits : txtUnits; if(pool.length<2) continue;
+      const main = pool.find(x=>x.i===u) && rnd(3)>0 ? pool.find(x=>x.i===u) : pool[rnd(pool.length)];
+      const other = take(pool.filter(x=>x.i!==main.i),1)[0];
+      const three = usePic ? take(dedupe(main.ws.filter(realPic),w=>w.p),3) : take(main.ws.filter(w=>/^[a-z' -]+$/i.test(w.en)),3);
+      const outs = usePic ? other.ws.filter(w=>realPic(w)&&!three.some(t=>t.p===w.p)) : other.ws.filter(w=>/^[a-z' -]+$/i.test(w.en)&&!three.some(t=>t.en===w.en));
+      const out = take(outs,1)[0]; if(!out||three.length<3) continue;
+      const key = [...three.map(t=>t.en),out.en].sort().join("|"); if(res.some(r=>r.key===key)) continue;
+      res.push(usePic ? {key,k:"choice", prompt:{text:"Hansı şəkil qrupa aid deyil?", az:"3 şəkil eyni mövzudandır, 1-i fərqlidir", small:true}, layout:"pic", opts:shuffle([...three.map(t=>({p:t.p, w:t.en})), {p:out.p, ok:true, w:out.en}])}
+                      : {key,k:"choice", prompt:{text:"Which word is different?", az:"3 söz eyni qrupdandır, 1-i fərqlidir"}, layout:"txt two", opts:shuffle([...three.map(t=>({t:t.en})), {t:out.en, ok:true}])}); }
+    return res; },
+  fillgap(un, ws, n=10){ const S2=shuffle(unitSentences(un)); const vocab=[], gram=[];
+    const bywLen=ws.slice().sort((a,b)=>b.en.length-a.en.length);
+    for(const [en,az] of S2){
+      const hit=bywLen.find(w=>/^[a-z' -]+$/i.test(w.en) && new RegExp("\\b"+w.en.replace(/[-]/g,"\\-")+"s?\\b","i").test(en));
+      if(hit){ const re=new RegExp("\\b("+hit.en.replace(/[-]/g,"\\-")+"s?)\\b","i"); const m=en.match(re)[1];
+        const wr=distract(hit,ws,3).filter(d=>/^[a-z' -]+$/i.test(d.en)).slice(0,3).map(d=> m.toLowerCase().endsWith("s")&&!hit.en.toLowerCase().endsWith("s") ? d.en+"s" : d.en);
+        if(wr.length>=2) vocab.push({k:"choice", sayAfter:true, full:()=>en, prompt:{text:en.replace(re,"_____"), az:az||"Boşluğa uyğun sözü seç"}, layout:"txt two", opts:shuffle([{t:m, ok:true}, ...wr.map(t=>({t}))])}); }
+      for(const set of GSETS){ const re=new RegExp("(^|[^a-z'])("+set.map(x=>x.replace("'","'")).join("|")+")(?=[^a-z']|$)","i"); const mm=en.match(re);
+        if(mm){ const word=mm[2], cap=/^[A-Z]/.test(word); const fix=t=>cap?t[0].toUpperCase()+t.slice(1):t;
+          const blank=en.slice(0,mm.index+mm[1].length)+"_____"+en.slice(mm.index+mm[0].length);
+          gram.push({k:"choice", sayAfter:true, full:()=>en, prompt:{text:blank, az:"Qrammatika: boşluğa uyğun variantı seç"}, layout:"txt two",
+            opts:shuffle(set.map(t=>({t:fix(t), ok:t.toLowerCase()===word.toLowerCase()})))}); break; } } }
+    const out=[]; const a=shuffle(vocab), b=shuffle(gram); while(out.length<n && (a.length||b.length)){ if(a.length) out.push(a.shift()); if(out.length<n && b.length) out.push(b.shift()); }
+    return out; },
+  arrange(ws, others, n=15){ const ok=w=>/^[a-z]+$/i.test(w.en) && w.en.length>=3 && w.en.length<=9 && new Set(w.en.toLowerCase()).size>=3;
+    const pool=dedupe([...take(ws.filter(ok),99), ...take(others.filter(ok),99)], w=>w.en.toLowerCase()).slice(0,n);
+    return pool.map(w=>{ const W2=w.en.toUpperCase(); const L=[...W2]; let mix; do{ mix=shuffle(L).join(""); }while(mix===W2);
+      const opts=new Set([W2]); let guard=0; while(opts.size<4 && guard++<200){ const c=shuffle(L).join(""); if(c!==W2) opts.add(c); }
+      return {k:"choice", sayAfter:true, full:()=>w.en, prompt:{html:`<div class="letters">${[...mix].map(c=>`<span>${c}</span>`).join("")}</div>`, text:"Arrange the letters to make a correct word.", az:"Hərfləri düzgün sıraya düz: düzgün sözü seç"}, layout:"txt two",
+        opts:shuffle([...opts].map(t=>({t, ok:t===W2})))}; }); }
+});
 function mixTest(g, u, n=15){
   const ws = u==null ? allWords(g) : words(g,u); const un = u==null ? null : unit(g,u);
   const others = u==null ? [] : grade(g).units.flatMap((x,i)=> i===u?[]:x.w.map(W));
@@ -169,7 +222,9 @@ function mixTest(g, u, n=15){
 /* ===================== VIEWS ===================== */
 let VIEW = {p:"home"};
 const app = $("#app");
-function go(v){ stopSpeak(); VIEW=v; render(); window.scrollTo({top:0,behavior:"instant"}); }
+let GEN=0; const later=(fn,ms)=>{ const g0=GEN; setTimeout(()=>{ if(g0===GEN) fn(); },ms); };
+function afterSpeech(fn,min){ const g0=GEN, t0=Date.now(); setTimeout(function poll(){ if(g0!==GEN) return; let sp=false; try{ sp=speechSynthesis.speaking||speechSynthesis.pending; }catch(e){} if(sp && Date.now()-t0<min+4500) return setTimeout(poll,150); fn(); },min); }
+function go(v){ GEN++; stopSpeak(); try{ document.activeElement&&document.activeElement.blur(); }catch(e){} VIEW=v; render(); window.scrollTo({top:0,behavior:"instant"}); }
 function tone_cls(g){ return g ? "t-"+grade(g).tone : "t-g1"; }
 
 function render(){
@@ -232,14 +287,13 @@ function unitTasks(g,u){
     quiz("listen","🎧","Dinlə və tap","Sözü eşit, şəklini seç",()=>G.listenPic(ws,8))];
   if (!P) voc.push(quiz("trans","🔁","Tərcümə et","Azərbaycanca sözün ingiliscəsini seç",()=>G.azEn(ws,8)));
   sec.push({id:"voc",h:"📖 Vocabulary",sub:"Sözləri öyrən: şəkil, səs, tərcümə",tasks:voc});
-  const sb=[ quiz("point","👉","Listen and point",P?"Şəklə bax, düzgün sözü dinləyib seç":"Şəklə bax, sözü seç",()=>G.picWord(ws,8,g)) ];
+  const sb=[ quiz("point","👉","Listen and point","🔊 Dinlə və düzgün variantı göstər",()=>G.picWord(ws,8,g)) ];
   if (un.story) sb.push(T("story","📗","Story: "+un.story.t,"Hekayəni dinlə, sonra suallar",el=>runStory(el,{t:un.story.t,lines:un.story.lines,qs:null},k("story"),g)));
   if (un.read) sb.push(T("read","📗","Read: "+un.read.t,"Mətni oxu və dinlə, suallara cavab ver",el=>runRead(el,un.read,k("read"),g)));
-  sb.push(T("book","📚","Şəkilli kitab: "+BOOKPAT[g][u].t,"Kitabı dinlə və oxu, sonra oyna",el=>runBook(el,makeBook(g,u),k("book"),g)));
   sb.push(T("grammar","🎵","Grammar Chant","Dinlə, əl çal və təkrar et, sonra oyna",el=>runChant(el,un,g,k("grammar"))));
   sb.push(quiz("chat","💬","Happy Chat!","Suala uyğun cavabı seç",()=>G.chat(un.chat,g)));
   sb.push(T("memory","🧠","Play: Memory Game","Cütləri tap",el=>runMemory(el,ws,g,k("memory"))));
-  sb.push(quiz("roundup","🔍","Round Up!",P?"Say və dinlə: düz, yoxsa səhv?":"Say, oxu və yoxla",()=>shuffle([...G.count(ws,g,4),...G.tf(ws,g,4)])));
+  sb.push(quiz("roundup","🔍","Round Up!",P?"Say, dinlə və seç · 10 sual":"Say, dinlə, oxu və yoxla · 10 sual",()=>G.roundup(ws,g,10)));
   sec.push({id:"sb",h:"📘 Student Book",sub:"Dərslikdəki dərslərin interaktiv forması",tasks:sb});
   const wb=[
     quiz("complete","✍️",P?"Complete: ilk hərf":"Complete the word",P?"Sözü eşit, ilk hərfini tap":"Buraxılmış hərfləri tamamla",()=>P?G.firstLetter(ws,8):G.missing(ws,7)),
@@ -247,14 +301,14 @@ function unitTasks(g,u){
     T("number","🔢","Listen and number","Sözləri eşitdiyin ardıcıllıqla düz",el=>runOrder(el,ws,k("number"))),
     T("match","🔗","Match","Şəkli sözlə birləşdir",el=>runMatch(el,ws,g,k("match")))];
   if (un.col) wb.push(T("colour","🖍️","Colour","Dinlə və rənglə",el=>runColour(el,g,u,k("colour"))));
-  wb.push(quiz("circle","⭕",P?"Listen and circle":"Read and circle",P?"Cümləni dinlə, şəkli dairəyə al":"Boşluğa uyğun sözü seç",()=>P?G.sentence(un.s,g,6):G.gap(un.s,ws,6)));
+  wb.push(quiz("circle","⭕",P?"Listen and circle":"Read and circle",P?"Cümləni dinlə, şəkli dairəyə al":"Boşluğa uyğun sözü seç",()=>P?G.sentence(un.s,g,6):G.fillgap(un,ws,8)));
   sec.push({id:"wb",h:"📗 Workbook (Skills Book)",sub:"İş dəftəri tapşırıqları",tasks:wb});
-  const ex=[ quiz("odd","🧩","Odd one out","Artıq olanı tap",()=>G.odd(ws,others,6)) ];
-  if (P) { ex.push(quiz("count","🔢","Count and choose","Say və rəqəmi seç",()=>G.count(ws,g,8)));
+  const ex=[ quiz("odd","🧩","Odd one out","4 variantdan qrupa aid olmayanı tap",()=>G.odd2(g,u,8)) ];
+  if (P) { if (G.count(ws,g,1).length) ex.push(quiz("count","🔢","Count and choose","Say və rəqəmi seç",()=>G.count(ws,g,8)));
            ex.push(quiz("sentpic","🗣️","Listen to the sentence","Cümləni dinlə, şəkli seç",()=>G.sentence(un.s,g,7))); }
-  else { ex.push(quiz("spell","🔤","Unscramble","Qarışıq hərflərdən sözü qur",()=>G.spell(ws,6)));
+  else { ex.push(quiz("arrange","🔤","Arrange the letters","Qarışıq hərflərdən düzgün sözü seç · 15 sual",()=>G.arrange(ws,others,15)));
          ex.push(quiz("build","🧱","Make a sentence","Sözləri düzgün sıraya düz",()=>G.build(un.s,6)));
-         ex.push(quiz("gap","🕳️","Fill the gap","Cümlədəki boşluğu doldur",()=>G.gap(un.s,ws,6)));
+         ex.push(quiz("gap","🕳️","Fill the gap","Cümlədəki boşluğu doldur · 10 sual",()=>G.fillgap(un,ws,10)));
          ex.push(T("search","🔎","Word search","Sözləri cədvəldə tap",el=>runSearch(el,ws,k("search"))));
          ex.push(quiz("enaz","🇦🇿","English → Azərbaycanca","Tərcüməni seç",()=>G.enAz(ws,8))); }
   if (g>=3) ex.push(quiz("type","⌨️","Write the word","Şəklə bax, sözü yaz",()=>G.type(ws,6)));
@@ -270,7 +324,7 @@ function unitTasks(g,u){
     quiz("ocean","🤿","Ocean Quest","Dənizin dibinə en, xəzinəni tap",()=>P?G.tf(ws,g,8):G.chat(un.chat,g).concat(G.picWord(ws,4,g)),"ocean"),
     quiz("bubble","🫧","Bubble Pop","Düzgün qabarcığı partlat",()=>G.listenPic(ws,8),"bubble"),
     quiz("alien","👽",P?"Alien Friends":"Alien Spelling",P?"Yadplanetlini dinlə, şəkli seç":"Yadplanetliyə sözü yazmağa kömək et",()=>P?G.listenPic(ws,8):G.spell(ws,6),"alien"),
-    T("puzzle","🧩","Fix the Picture","Şəkli hissələrdən düzəlt",el=>runPuzzle(el,ws,g,k("puzzle"))),
+    ...(dedupe(ws.filter(w=>!isText(w.p)&&!w.p.startsWith("c:")&&!w.p.startsWith("#")),w=>w.p).length>=4?[T("puzzle","🧩","Fix the Picture","Şəkli hissələrdən düzəlt",el=>runPuzzle(el,ws,g,k("puzzle")))]:[]),
     T("race","🏁","Sound Race","Vaxta qarşı: dinlə və tap!",el=>runQuiz(el,{title:"Sound Race",ins:"Hər sual üçün "+(P?7:6)+" saniyə var. Tez ol!",qs:G.listenPic(ws,10),key:k("race"),g,u,timer:P?7:6}))]});
   sec.push({id:"test",h:"🏆 Unit testi",sub:"Unitin yekun testi",tasks:[quiz("test","🏆","Unit "+(u+1)+" testi","15 sual · bütün unit",()=>mixTest(g,u,15))]});
   return sec;
@@ -341,13 +395,13 @@ function runQuiz(el, cfg){
   el.innerHTML = header(el,cfg.title,cfg.ins) + (skin?skin.mount(n):"") + (cfg.timer?`<div class="timer"><i id="tmr"></i></div>`:"") + `<div class="stage" id="stg"></div><div class="feedback" id="fb"></div>`;
   const stg=$("#stg",el), fb=$("#fb",el); let lock=false, tmr=null;
   function upd(){ $("#qc",el).textContent=`${Math.min(i+1,n)}/${n}`; $("#sc",el).textContent="⭐ "+score; $("#pg",el).style.width=(i*100/n)+"%"; }
-  function next(){ if(!el.isConnected) return; if(i>=n) return finish(); upd(); lock=false; fb.textContent=""; fb.className="feedback"; if(skin&&skin.before) skin.before(i); show(qs[i]);
+  function next(){ if(!el.isConnected) return; stopSpeak(); try{ document.activeElement&&document.activeElement.blur(); }catch(e){} if(i>=n) return finish(); upd(); lock=false; fb.textContent=""; fb.className="feedback"; if(skin&&skin.before) skin.before(i); show(qs[i]);
     if(cfg.timer){ const bar=$("#tmr",el); bar.style.transition="none"; bar.style.width="100%"; void bar.offsetWidth; bar.style.transition=`width ${cfg.timer}s linear`; bar.style.width="0%"; clearTimeout(tmr);
       tmr=setTimeout(()=>{ if(lock) return; stg.querySelectorAll("button").forEach(b=>b.disabled=true); const q=qs[i]; const ok=q.opts&&q.opts.find(o=>o.ok); fb.textContent="⏰ Vaxt bitdi!"; answered(false, ok&&(ok.t||ok.w||"")); }, cfg.timer*1000); } }
   function answered(ok, correctText){ if(lock) return; lock=true; clearTimeout(tmr); if(cfg.timer){ const bar=$("#tmr",el); const w=getComputedStyle(bar).width; bar.style.transition="none"; bar.style.width=w; }
       if(ok){ score++; sfx.ok(); fb.textContent=["Əla! 🎉","Super! ⭐","Afərin! 👏","Düzdür! ✅"][rnd(4)]; fb.className="feedback ok"; if(n<=10||score%3===0) fireworks(1); }
       else { sfx.bad(); fb.innerHTML="Səhv 😕"+(correctText?` · Düzgün: <b>${esc(correctText)}</b>`:""); fb.className="feedback no"; }
-      if(skin) skin.after(ok); $("#sc",el).textContent="⭐ "+score; i++; setTimeout(next, ok?1000:1700); }
+      if(skin) skin.after(ok); $("#sc",el).textContent="⭐ "+score; i++; afterSpeech(next, ok?1000:1700); }
   function finish(){ $("#pg",el).style.width="100%"; const pct=Math.round(score*100/n); result({key:cfg.key, title:cfg.title, g:cfg.g, u:cfg.u, score, n, pct, retry:()=>runQuiz(el,Object.assign({},cfg,{qs:cfg.regen?cfg.regen():shuffle(cfg.qs)}))}); }
   function show(q){
     if(q.k==="choice") return showChoice(q);
@@ -364,12 +418,12 @@ function runQuiz(el, cfg){
       if(q.cells[+b.dataset.j]===q.target){ got++; b.classList.add("fok"); tone(880,.08,"sine",.07); speak(q.say||q.target); left(); if(got===need) answered(miss<=1); }
       else { miss++; b.classList.add("fno"); sfx.bad(); } });
   }
-  function promptHTML(q){ const p=q.prompt||{}; return `<div class="prompt">${q.say?`<button class="say" id="sayb" aria-label="Dinlə">🔊</button>`:""}${p.p?pic(p.p,"bigpic"):""}${p.html||""}${p.text&&!(p.small&&q.say&&false)?`<div class="pq" style="${p.small?"font-size:18px;color:var(--muted)":""}">${esc(p.text)}</div>`:""}${p.az?`<div class="paz">${esc(p.az)}</div>`:""}</div>`; }
-  function bindSay(q){ const b=$("#sayb",el); if(b){ b.onclick=()=>speak(q.say); setTimeout(()=>speak(q.say),250); } }
+  function promptHTML(q){ const p=q.prompt||{}; const leak = p.p && isText(p.p) && (q.opts||[]).some(o=>o.t && String(o.t).toLowerCase().includes(String(p.p).toLowerCase())); return `<div class="prompt">${q.say?`<button class="say" id="sayb" aria-label="Dinlə">🔊</button>`:""}${p.p&&!leak?pic(p.p,"bigpic"):""}${p.html||""}${p.text&&!(p.small&&q.say&&false)?`<div class="pq" style="${p.small?"font-size:18px;color:var(--muted)":""}">${esc(p.text)}</div>`:""}${p.az?`<div class="paz">${esc(p.az)}</div>`:""}</div>`; }
+  function bindSay(q){ const b=$("#sayb",el); if(b){ b.onclick=()=>speak(q.say); later(()=>speak(q.say),300); } }
   function showChoice(q){
     const isPic = q.layout==="pic"||q.layout==="pic2"; const cls = isPic ? (q.opts.length===4?"p4":q.opts.length===3?"p3":"p2") : ("txt "+(q.layout.includes("two")?"two":""));
-    stg.innerHTML = promptHTML(q) + `<div class="opts ${cls} ${cfg.skin==="bubble"?"bubbles":""}">${q.opts.map((o,j)=>`<button class="opt ${isPic?"pico":""}" data-j="${j}">${o.p?pic(o.p):""}${o.t?`<span>${esc(o.t)}</span>`:""}${o.sp?`<span class="spk" data-sp="${esc(o.t)}">🔊</span>`:""}</button>`).join("")}</div>`;
-    bindSay(q);
+    stg.innerHTML = promptHTML(q) + `<div class="opts fresh ${cls} ${cfg.skin==="bubble"?"bubbles":""}">${q.opts.map((o,j)=>`<button class="opt ${isPic?"pico":""}" data-j="${j}">${o.p?pic(o.p):""}${o.t?`<span>${esc(o.t)}</span>`:""}${o.sp?`<span class="spk" data-sp="${esc(o.t)}">🔊</span>`:""}</button>`).join("")}</div>`;
+    bindSay(q); { const oo=stg.querySelector(".opts"); if(oo) oo.addEventListener("mousemove",()=>oo.classList.remove("fresh"),{once:true}); }
     stg.querySelectorAll("[data-sp]").forEach(s=>s.onclick=e=>{ e.stopPropagation(); speak(s.dataset.sp); });
     stg.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ const o=q.opts[+b.dataset.j]; stg.querySelectorAll(".opt").forEach(x=>x.disabled=true);
       const okIdx=q.opts.findIndex(x=>x.ok); const okBtn=stg.querySelector(`.opt[data-j="${okIdx}"]`);
@@ -451,7 +505,7 @@ function runFlash(el, ws, g, u, key){
   const draw=()=>{ const w=list[i]; const L=S.learned[lk].includes(w.en);
     $("#fl",el).classList.remove("flip");
     $(".face",el).innerHTML=`${pic(w.p,"bigpic")}<div class="w">${esc(w.en)}</div>${L?'<div class="learned">✓ Öyrənilib</div>':""}`;
-    $(".bface",el).innerHTML=`${pic(w.p,"bigpic")}<div class="az">${esc(w.az)}</div><div class="w" style="font-size:24px">${esc(w.en)}</div>`;
+    $(".bface",el).innerHTML=`${pic(w.p,"bigpic")}<div class="az">${esc(w.az)}${w.ru?`<br><span style="font-size:.85em;opacity:.75">${esc(w.ru)}</span>`:""}</div><div class="w" style="font-size:24px">${esc(w.en)}</div>`;
     $("#qc",el).textContent=`${i+1}/${list.length}`; $("#pg",el).style.width=((i+1)*100/list.length)+"%";
     const c=S.learned[lk].length; $("#sc",el).textContent=`✓ ${c}`; $("#lc",el).textContent = c===ws.length?"🎉 Bütün sözləri öyrəndin!":`${c} / ${ws.length} söz öyrənilib`;
     speak(w.en); };
@@ -467,7 +521,7 @@ function runFlash(el, ws, g, u, key){
 /* ---- word list ---- */
 function runList(el, ws, un, key){
   el.innerHTML = header(el,"Lüğət: "+un.t,"Sözə toxun və dinlə. «Hamısını dinlə» bütün sözləri ardıcıl oxuyur.") + `<div class="stage"><div class="row"><button class="btn" id="all">▶ Hamısını dinlə</button><button class="btn ghost" id="stop">⏹ Dayan</button></div>
-   <div class="wlist">${ws.map((w,j)=>`<button class="witem" data-j="${j}">${pic(w.p)}<div><b>${esc(w.en)}</b><small>${esc(w.az)}</small></div><span>🔊</span></button>`).join("")}</div>
+   <div class="wlist">${ws.map((w,j)=>`<button class="witem" data-j="${j}">${pic(w.p)}<div><b>${esc(w.en)}</b><small>${esc(tr(w))}</small></div><span>🔊</span></button>`).join("")}</div>
    <h3 style="font-size:20px">Cümlələr</h3><div class="wlist">${un.s.map((s,j)=>`<button class="witem" data-s="${j}">${pic(s[2])}<div><b style="font-size:16px">${esc(s[0])}</b><small>${esc(s[1])}</small></div><span>🔊</span></button>`).join("")}</div></div>`;
   $("#qc",el).textContent=ws.length+" söz"; $("#sc",el).hidden=true; $("#pg",el).style.width="100%";
   el.querySelectorAll("[data-j]").forEach(b=>b.onclick=()=>speak(ws[+b.dataset.j].en));
@@ -536,7 +590,7 @@ function runColour(el,g,u,key){
     $("#cs",el).innerHTML=`<div class="prompt"><button class="say sm" id="cp2">🔊</button><div class="pq">${pre(g)?"🔊 Dinlə və rənglə":esc(ins)}</div><div class="paz">${pre(g)?"":esc(c.az)+" rəngə boya"}</div></div>
       <button class="canvasbox" id="cv" aria-label="Rənglə">${SHAPES[sh]("#FFFFFF")}</button>
       <div class="palette">${cs.map((x,j)=>`<button class="paint" data-j="${j}" style="background:${x.p.slice(2)}" aria-label="${esc(x.en)}"></button>`).join("")}</div><div class="feedback" id="cf"></div>`;
-    $("#cp2",el).onclick=()=>speak(ins); setTimeout(()=>speak(ins),250);
+    $("#cp2",el).onclick=()=>speak(ins); later(()=>speak(ins),300);
     el.querySelectorAll(".paint").forEach(b=>b.onclick=()=>{ el.querySelectorAll(".paint").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); chosen=cs[+b.dataset.j]; speak(chosen.en); });
     $("#cv",el).onclick=()=>{ if(!chosen){ toast("Əvvəlcə rəngi seç 🎨"); return; } $("#cv",el).innerHTML=SHAPES[sh](chosen.p.slice(2)); $("#cv",el).onclick=null; const ok=chosen.en===c.en;
       if(ok){ score++; sfx.ok(); fireworks(1); $("#cf",el).textContent="Əla! 🎨"; $("#cf",el).className="feedback ok"; } else { sfx.bad(); $("#cf",el).innerHTML=`Səhv. Düzgün rəng: <b>${esc(c.en)}</b>`; $("#cf",el).className="feedback no"; }
@@ -552,7 +606,7 @@ function runCake(el,key){
     $("#ck",el).innerHTML=`<div class="prompt"><button class="say sm" id="sp3">🔊</button><div class="pq">${esc(ins)}</div></div>
      <svg viewBox="0 0 200 230" style="width:220px;max-width:100%">${[0,1,2,3,4,5].map(j=>{ const y=200-j*30, w=170-j*20, x=(200-w)/2; return `<g data-l="${j}" style="cursor:pointer"><rect x="${x}" y="${y-28}" width="${w}" height="28" rx="6" fill="${fill[j]}" stroke="#333" stroke-width="2.5"/><text x="${x-4}" y="${y-9}" font-size="12" text-anchor="end" fill="currentColor">${j+1}${["st","nd","rd","th","th","th"][j]}</text></g>`; }).join("")}<rect x="96" y="10" width="8" height="22" fill="#FFC83D"/><path d="M100 2q6 6 0 10q-6-4 0-10" fill="#FF7A2F"/></svg>
      <div class="palette">${cols.map((c,j)=>`<button class="paint" data-j="${j}" style="background:${c[1]}" aria-label="${c[0]}"></button>`).join("")}</div><div class="feedback" id="kf"></div>`;
-    $("#sp3",el).onclick=()=>speak(ins); setTimeout(()=>speak(ins),250);
+    $("#sp3",el).onclick=()=>speak(ins); later(()=>speak(ins),300);
     el.querySelectorAll(".paint").forEach(b=>b.onclick=()=>{ el.querySelectorAll(".paint").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); chosen=cols[+b.dataset.j]; speak(chosen[0]); });
     el.querySelectorAll("[data-l]").forEach(gq=>gq.onclick=()=>{ if(!chosen){ toast("Əvvəlcə rəngi seç 🎨"); return; } const l=+gq.dataset.l; fill[l]=chosen[1]; const ok=l===q.layer&&chosen[0]===q.c[0];
       if(ok){ score++; sfx.ok(); } else { sfx.bad(); fill[l]= l===q.layer?q.c[1]:fill[l]; fill[q.layer]=q.c[1]; }
@@ -692,7 +746,6 @@ function extraTasks(g){
     quiz("alien","👽",P?"Alien Friends":"Alien Spelling",P?"Dinlə və tap":"Sözü yaz",()=>P?G.listenPic(ws,10):G.spell(ws,8),"alien"),
     T("memory","🧠","Memory Game","Cütləri tap",el=>runMemory(el,ws,g,k("memory"))),
     ...(P?[]:[T("search","🔎","Word search","Sözləri tap",el=>runSearch(el,ws,k("search")))])]});
-  sec.splice(1,0,{id:"lib",h:"📚 Kitabxana",sub:"Bütün unitlərin şəkilli kitabları",tasks:grade(g).units.map((un,u)=>{ const b=BOOKPAT[g][u]; return T("bk"+u,un.e,b.t,"Unit "+(u+1)+" · oxu, dinlə, oyna",el=>runBook(el,makeBook(g,u),k("bk"+u),g)); })});
   if (g<=2) sec.push({id:"phon",h:"🔤 Fonika yolu",sub:"A–Z hərf səsləri və CVC sözləri",tasks:[...Object.keys(PH).map(L=>T("ph"+L,L.toUpperCase()+L,"Hərf "+L.toUpperCase()+" "+L,PH[L].map(x=>x[0]).join(", "),el=>runLetter(el,L,k("ph"+L),g))), ...CVC.map((c,ci)=>T("cvc"+ci,"🔗","Blend: "+c.t,c.w.map(x=>x[0]).join(", "),el=>runCVC(el,c,k("cvc"+ci),g)))]});
   if (g<=2) sec.push({id:"abc",h:"🔤 Əlifba",sub:"Hərflər və səslər",tasks:[T("abc","🔤","ABC kartları","26 hərf, söz və səs",el=>runABC(el,k("abc"))), quiz("abcq","🅰️","İlk hərfi tap","Sözü dinlə, hərfi seç",()=>abcQs(10))]});
   sec.push({id:"bigtest",h:"🧠 Ümumi test",sub:"Bütün sinif üzrə 25 sual",tasks:[quiz("bigtest","🏅","Böyük test","25 sual · bütün unitlər",()=>mixTest(g,null,25))]});

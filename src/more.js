@@ -99,7 +99,7 @@ function runPuzzle(el, ws, g, key){
     const draw=()=>{ $("#pz",el).innerHTML=`<div class="puzzle" style="grid-template-columns:repeat(${N},${S2}px)">${order.map((v,k)=>{ const x=v%N, y=Math.floor(v/N); return `<button class="ptile ${sel===k?"sel":""}" data-k="${k}" style="width:${S2}px;height:${S2}px"><span style="left:${-x*S2}px;top:${-y*S2}px">${w.p}</span></button>`; }).join("")}</div><button class="say sm" id="ph">🔊</button><div class="feedback" id="pf"></div>`;
       $("#ph",el).onclick=()=>speak(w.en);
       el.querySelectorAll(".ptile").forEach(b=>b.onclick=()=>{ const k=+b.dataset.k; if(sel==null){ sel=k; draw(); return; } [order[sel],order[k]]=[order[k],order[sel]]; sel=null; moves++; draw();
-        if(order.every((v,j)=>v===j)){ sfx.ok(); fireworks(1); score+= moves<=N*N?1:0.5; $("#pf",el).innerHTML=`Əla! Bu: <b>${esc(w.en)}</b> — ${esc(w.az||"")}`; $("#pf",el).className="feedback ok"; speak(w.en); $("#sc",el).textContent="⭐ "+Math.round(score); r++; setTimeout(round,1800); } }); };
+        if(order.every((v,j)=>v===j)){ sfx.ok(); fireworks(1); score+= moves<=N*N?1:0.5; $("#pf",el).innerHTML=`Əla! Bu: <b>${esc(w.en)}</b> — ${esc(w.ru?w.az+" · "+w.ru:(w.az||""))}`; $("#pf",el).className="feedback ok"; speak(w.en); $("#sc",el).textContent="⭐ "+Math.round(score); r++; setTimeout(round,1800); } }); };
     draw(); };
   const fin=()=>result({key,title:"Fix the Picture",g,u:VIEW.u,score:Math.round(score),n:pool.length,pct:Math.round(score*100/pool.length),retry:()=>runPuzzle(el,ws,g,key)});
   round();
