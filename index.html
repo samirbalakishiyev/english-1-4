@@ -1852,17 +1852,17 @@ const isPaid=u=>(+u.elaqe||0)>=PAY_FROM, isPay=u=>isPaid(u)&&!u.blok, isNew=u=>!
 async function tUsers(reload){
   const same=!!document.getElementById('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same)app.innerHTML=thdr('İstifadəçilər','Yüklənir…','tHome()');else tToast('Yenilənir…');await tFetch('users')}
-  const L=TU.list||[],now=Date.now(),day=864e5,q=TU.q.toLowerCase();
+  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q.toLowerCase();
   const bl=L.filter(u=>u.blok).length,td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   const roles=[...new Set(L.map(u=>u.rol).filter(Boolean))];
   let h=thdr('İstifadəçilər',L.length+' nəfər','tHome()');
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
   h+=`<div class="statrow">${[['Cəmi',L.length],...roles.map(r=>[r,L.filter(u=>u.rol===r).length]),['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['🆕 Yeni',L.filter(isNew).length],['💳 Ödəniş edib',L.filter(isPay).length]].map(([a,b])=>`<div><small>${esc(a)}</small><b>${b}</b></div>`).join('')}</div>`;
   const fb=(on,js,lab)=>`<button class="btn ${on?'':'ghost'}" onclick="${js}">${lab}</button>`;
-  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Rol:</b>${['',...roles].map(f=>fb(TU.r===f,`TU.r='${esc(f)}';tUsers()`,esc(f)||'Hamısı')).join('')}</div>`;
-  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><b>Status:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+L.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+L.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+bl+')'],['','Hamısı']].map(([f,l])=>fb(TU.f===f,`TU.f='${f}';tUsers()`,l)).join('')}</div>`;
+  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+cR('Müəllim')+')'],['Tələbə','🎓 Tələbələr ('+cR('Tələbə')+')']].map(([f,l])=>fb(TU.r===f,`TU.r='${f}';TU.f='Yeni';tUsers()`,l)).join('')}</div>`;
+  if(TU.r)h+=`<div class="row" style="justify-content:flex-start;align-items:center"><b>${TU.r==='Müəllim'?'Müəllimlər':'Tələbələr'}:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+RL.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+RL.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+RL.filter(u=>u.blok).length+')']].map(([f,l])=>fb(TU.f===f,`TU.f='${f}';tUsers()`,l)).join('')}</div>`;
   h+=tSearch('tUsers');
-  const okF=u=>!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):true);
+  const okF=u=>!TU.r||!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):true);
   const rows=L.filter(u=>(!TU.r||u.rol===TU.r)&&okF(u)&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
   h+=`<p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" onclick="tWa('${t}')">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
   app.innerHTML=h;window.scrollTo(0,same?y:0);
