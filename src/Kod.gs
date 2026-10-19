@@ -1,5 +1,6 @@
 /* English 1–4 · Google Cədvəl skripti (Apps Script)
-   Qeydiyyat, son giriş, blok və "əlaqə saxlanılıb" bu cədvəldə saxlanılır. Nəticələr cədvələ yazılmır.
+   Qeydiyyat, son giriş, blok və 💳 ödəniş bu cədvəldə saxlanılır (ödəniş tarixi "Əlaqə saxlanılıb" sütunundadır — sütunun adını dəyişməyin).
+   Nəticələr cədvələ yazılmır. Bu skript başqa saytlardan asılı deyil.
    1) Aşağıdakı KEY-i öz gizli açarınızla dəyişin (məs: Samir-2026-xyz).
    2) Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone (Все). */
 const KEY = 'BURAYA-OZ-ACARINIZI-YAZIN';
@@ -10,7 +11,7 @@ function out(o) {
 /* ---------- Users vərəqi (oxunaqlı başlıqlar, tarixlər, blok qutucuqları) ---------- */
 const UL = ['Telefon', 'Ad', 'Soyad', 'Rol', 'Qeydiyyat tarixi', 'Son giriş', 'Bloklanıb', 'Sayt', 'Əlaqə saxlanılıb'];
 const DF = 'dd.mm.yyyy hh:mm';
-const isTrue = x => x === true || String(x).toUpperCase() === 'TRUE';
+const isTrue = x => x === true || /^(true|bəli|beli|yes|1|blok)$/i.test(String(x).trim());
 const ms = x => x instanceof Date ? x.getTime() : (+x || '');
 const asDate = x => (typeof x === 'number' && x > 1e11) ? new Date(x) : x;
 
