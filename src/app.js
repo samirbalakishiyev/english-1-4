@@ -886,9 +886,9 @@ function tHome(){
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
   window.scrollTo(0,0);
 }
-let TU={list:null,res:null,q:'',f:'',err:'',ask:'',msg:''};
+let TU={list:null,res:null,q:'',f:'',r:'',err:'',msg:''};
 function tKey(){
-  app.innerHTML=thdr('Cədvəl açarı','Bir dəfə daxil edin','tHome()')+`<form class="tlogin" onsubmit="event.preventDefault();lsSet('hc14-tkey',$('#tk').value.trim());TU={list:null,res:null,q:'',f:'',err:'',ask:'',msg:''};TMSG='Açar yadda saxlandı.';tHome()"><input id="tk" type="password" autocomplete="off" placeholder="Açar" value="${esc(lsGet('hc14-tkey',''))}"><button class="btn" type="submit">Yadda saxla</button></form><p class="note" style="font-size:14px">Açar Google Cədvəlin skriptindədir (KEY). Şagirdlərə verməyin.</p>`;
+  app.innerHTML=thdr('Cədvəl açarı','Bir dəfə daxil edin','tHome()')+`<form class="tlogin" onsubmit="event.preventDefault();lsSet('hc14-tkey',$('#tk').value.trim());TU={list:null,res:null,q:'',f:'',r:'',err:'',ask:'',msg:''};TMSG='Açar yadda saxlandı.';tHome()"><input id="tk" type="password" autocomplete="off" placeholder="Açar" value="${esc(lsGet('hc14-tkey',''))}"><button class="btn" type="submit">Yadda saxla</button></form><p class="note" style="font-size:14px">Açar Google Cədvəlin skriptindədir (KEY). Şagirdlərə verməyin.</p>`;
   window.scrollTo(0,0);
 }
 async function tFetch(kind){
@@ -901,40 +901,38 @@ async function tFetch(kind){
 }
 const dOnly=t=>{if(!t)return '';const d=new Date(+t||t);return isNaN(d)?String(t):`${z2(d.getDate())}.${z2(d.getMonth()+1)}.${d.getFullYear()} ${z2(d.getHours())}:${z2(d.getMinutes())}`};
 function tSearch(fn){return `<input class="tsearch" placeholder="Axtar: ad, soyad, telefon…" value="${esc(TU.q)}" oninput="TU.q=this.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{${fn}();const i=document.querySelector('.tsearch');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)">`}
+function tToast(m){let t=document.getElementById('ttoast');if(!t){t=document.createElement('div');t.id='ttoast';t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;background:#1F2547;color:#fff;padding:12px 18px;border-radius:14px;font-weight:800;font-size:15px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100% - 32px);text-align:center;transition:opacity .3s';document.body.appendChild(t)}
+  t.textContent=m;t.style.opacity='1';clearTimeout(window._tt);window._tt=setTimeout(()=>{t.style.opacity='0'},2600)}
 async function tUsers(reload){
-  if(!TU.list||reload){app.innerHTML=thdr('İstifadəçilər','Yüklənir…','tHome()');await tFetch('users')}
+  const same=!!document.getElementById('tuList'),y=window.scrollY;
+  if(!TU.list||reload){if(!same)app.innerHTML=thdr('İstifadəçilər','Yüklənir…','tHome()');else tToast('Yenilənir…');await tFetch('users')}
   const L=TU.list||[],now=Date.now(),day=864e5,q=TU.q.toLowerCase();
   const bl=L.filter(u=>u.blok).length,td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   const roles=[...new Set(L.map(u=>u.rol).filter(Boolean))];
   let h=thdr('İstifadəçilər',L.length+' nəfər','tHome()');
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
   h+=`<div class="statrow">${[['Cəmi',L.length],...roles.map(r=>[r,L.filter(u=>u.rol===r).length]),['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['Əlaqə saxlanılıb',L.filter(u=>u.elaqe).length]].map(([a,b])=>`<div><small>${esc(a)}</small><b>${b}</b></div>`).join('')}</div>`;
-  h+=`<div class="row" style="justify-content:flex-start"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button>${['',...roles,'Blok','Elaqesiz'].map(f=>`<button class="btn ${TU.f===f?'':'ghost'}" onclick="TU.f='${f}';tUsers()">${f==='Blok'?'🚫 Bloklananlar':f==='Elaqesiz'?'📞 Əlaqə saxlanılmayanlar':f||'Hamısı'}</button>`).join('')}</div>`;
-  if(TU.msg)h+=`<p class="tmsg">${esc(TU.msg)}</p>`;
+  const fb=(on,js,lab)=>`<button class="btn ${on?'':'ghost'}" onclick="${js}">${lab}</button>`;
+  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Rol:</b>${['',...roles].map(f=>fb(TU.r===f,`TU.r='${esc(f)}';tUsers()`,esc(f)||'Hamısı')).join('')}</div>`;
+  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><b>Status:</b>${[['','Hamısı'],['Blok','🚫 Bloklananlar'],['Aciq','✅ Bloklanmayanlar'],['Elaqesiz','📞 Əlaqə saxlanılmayanlar']].map(([f,l])=>fb(TU.f===f,`TU.f='${f}';tUsers()`,l)).join('')}</div>`;
   h+=tSearch('tUsers');
-  const rows=L.filter(u=>(!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Elaqesiz'?!u.elaqe:u.rol===TU.f))&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<div class="tlist">`+rows.map(u=>`<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${u.elaqe?' style="color:#1E8E4E"':''}>${u.elaqe?'✓ ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.elaqe?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">✓ Əlaqə saxlanılıb · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${esc(u.tel)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${esc(u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel)}" target="_blank" rel="noopener">💬</a><button class="tbtn${u.elaqe?'':' ok'}" onclick="tElaqe('${esc(u.tel)}',${!u.elaqe})">${u.elaqe?'↺ Əlaqəni geri al':'✓ Əlaqə saxlanılıb'}</button>${TU.ask===u.tel?`<div class="askrow"><b>${u.blok?'Bloku açmaq':'Bloklamaq'} istəyirsiniz?</b><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tBlock('${esc(u.tel)}',${!u.blok})">Bəli</button><button class="tbtn" onclick="TU.ask='';tUsers()">Xeyr</button></div>`:`<button class="tbtn ${u.blok?'ok':'rm'}" onclick="TU.ask='${esc(u.tel)}';TU.msg='';tUsers()">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button>`}</div>`).join('')+(rows.length?'':'<p class="note">Hələ heç kim yoxdur.</p>')+`</div>`;
-  app.innerHTML=h;
+  const okF=u=>!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Aciq'?!u.blok:TU.f==='Elaqesiz'?!u.elaqe:true);
+  const rows=L.filter(u=>(!TU.r||u.rol===TU.r)&&okF(u)&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
+  h+=`<p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${u.elaqe?' style="color:#1E8E4E"':''}>${u.elaqe?'✓ ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.elaqe?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">✓ Əlaqə saxlanılıb · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" onclick="tWa('${t}')">💬</a><button class="tbtn${u.elaqe?'':' ok'}" onclick="tSet('elaqe','${t}',${!u.elaqe})">${u.elaqe?'↺ Əlaqəni geri al':'✓ Əlaqə saxlanılıb'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
+  app.innerHTML=h;window.scrollTo(0,same?y:0);
 }
-async function tBlock(tel,v){
-  const key=lsGet('hc14-tkey','');TU.ask='';
-  if(!key){TU.msg='Əvvəlcə "Cədvəl açarı"nı daxil edin.';return tUsers()}
-  TU.msg='Yadda saxlanılır…';tUsers();
-  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'block',key,tel,v})});const o=await r.json();
-    if(!o.ok)throw new Error(o.error||'x');
-    (TU.list||[]).forEach(u=>{if(u.tel===tel)u.blok=v});TU.msg=v?'Bloklandı. İstifadəçi saytı növbəti açanda bildiriş görəcək.':'Blok açıldı.';
-  }catch(e){const m=String(e&&e.message);TU.msg=m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı: '+m}
-  tUsers();
-}
-async function tElaqe(tel,v){
-  const key=lsGet('hc14-tkey','');TU.ask='';
-  if(!key){TU.msg='Əvvəlcə "Cədvəl açarı"nı daxil edin.';return tUsers()}
-  TU.msg='Yadda saxlanılır…';tUsers();
-  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'elaqe',key,tel,v})});const o=await r.json();
-    if(!o.ok)throw new Error(o.error||'x');
-    (TU.list||[]).forEach(u=>{if(String(u.tel)===String(tel))u.elaqe=v?(o.t||Date.now()):''});TU.msg=v?'✓ Əlaqə saxlanılıb kimi işarələndi.':'İşarə götürüldü.';
-  }catch(e){const m=String(e&&e.message);TU.msg=m==='key'?'Cədvəl açarı səhvdir.':m==='a'||m==='x'?'Alınmadı. Google Cədvəlin skriptini yeniləyin (yeni Kod.gs → Новая версия).':'Alınmadı: '+m}
-  tUsers();
+/* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
+function tWa(tel){setTimeout(()=>{const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(u&&!u.elaqe)tSet('elaqe',tel,true)},300)}
+async function tSet(a,tel,v){
+  const key=lsGet('hc14-tkey','');
+  if(!key){tToast('Əvvəlcə "Cədvəl açarı"nı daxil edin.');return}
+  const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(!u)return;
+  const F=a==='block'?'blok':'elaqe',old=u[F];
+  u[F]=a==='elaqe'?(v?Date.now():''):v;tUsers();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a,key,tel,v})});const o=await r.json();
+    if(!o.ok)throw new Error(o.error||'x');if(a==='elaqe'&&v&&o.t)u.elaqe=o.t;
+    tToast(a==='block'?(v?'🚫 Bloklandı':'✅ Blok açıldı'):(v?'✓ Əlaqə saxlanılıb':'Əlaqə işarəsi götürüldü'));
+  }catch(e){u[F]=old;tUsers();const m=String(e&&e.message);tToast(m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
 async function tResults(reload){
   if(!TU.res||reload){app.innerHTML=thdr('Nəticələr','Yüklənir…','tHome()');await tFetch('results')}
