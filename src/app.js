@@ -992,7 +992,9 @@ const DN_TYPES=['💡 Bilirdinizmi?','📘 Günün qaydası','💬 Günün söz�
 const dnEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let DNOTE=(()=>{try{return JSON.parse(localStorage.getItem(DN_LS)||'null')}catch(e){return null}})();
 const dnKeep=n=>{try{localStorage.setItem(DN_LS,JSON.stringify(n||null))}catch(e){}};
-const dnFmt=s=>dnEsc(s).replace(/\*([^*\n]+)\*/g,'<mark class="dn-hl">$1</mark>').replace(/\n/g,'<br>');
+const dnFmt=s=>{const L=[];let t=String(s==null?'':s).replace(/((?:https?:\/\/|www\.)[^\s<>"]+[^\s<>".,;:!?)\]])/gi,u=>{L.push(u);return '\u0000'+(L.length-1)+'\u0000'});
+  t=dnEsc(t).replace(/\*([^*\n]+)\*/g,'<mark class="dn-hl">$1</mark>').replace(/\n/g,'<br>');
+  return t.replace(/\u0000(\d+)\u0000/g,(m,i)=>{const u=L[+i],h=/^www\./i.test(u)?'https://'+u:u;return `<a class="dn-a" href="${dnEsc(h)}" target="_blank" rel="noopener">${dnEsc(u)}</a> <button type="button" class="dn-cp" data-cp="${dnEsc(h)}">📋 Kopyala</button>`})};
 const dnDate=t=>{const d=new Date(+t);return isNaN(d)?'':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()};
 const dnOn=n=>!!(n&&n.on!==false&&String(n.x||'').trim());
 function dnHTML(n,v){n=n===undefined?DNOTE:n;if(!dnOn(n))return '';
