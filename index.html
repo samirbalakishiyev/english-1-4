@@ -1182,6 +1182,7 @@ function render(){
   if (v.p==="extra") return renderExtra(v.g);
   if (v.p==="act") return renderAct(v);
   if (v.p==="teacher") return teacher();
+  if (v.p==="fb") return fbHome();
 }
 function crumbs(items){ return `<nav class="crumbs"><button class="homeb" data-go='{"p":"home"}'>🏠 Ana menyu</button>${items.map((it,i)=> i===0 ? `<button class="back" data-go='${JSON.stringify(it[1])}'>← Geri</button>` : (it[1]?`<button data-go='${JSON.stringify(it[1])}'>${it[0]}</button>`:`<span>${it[0]}</span>`)).join("")}</nav>`; }
 app.addEventListener("click", e=>{ const b=e.target.closest("[data-go]"); if(b) go(JSON.parse(b.dataset.go)); });
@@ -1194,6 +1195,7 @@ function renderHome(){
   <section class="hello"><h2>${name?`Salam, ${esc(name)}! 👋`:"Salam! Sinfini seç 👋"}</h2>
   <p>Hər sinifdə dərsliyin bütün unitləri var. Unitin içində sözləri öyrənirsən, Student Book və Workbook tapşırıqlarını edirsən, oyun oynayırsan, video izləyirsən və sonda test yazırsan.</p></section>
   ${profHTML()}
+  <button class="btn fbtile" data-go='{"p":"fb"}' style="display:flex;width:100%;align-items:center;gap:10px;justify-content:flex-start;background:#EEF0FF;color:#1F2A6B;border:2px solid #5B6CD9;margin:10px 0"><span style="font-size:22px">✍️</span><span style="text-align:left"><b style="display:block">Rəy və təklifləriniz</b><small style="font-weight:700">Yazın — yalnız Samir müəllim oxuyur</small></span></button>
   <section class="grades">${GRADES.map(gr=>{ const p=gradePct(gr.n); return `
     <button class="gcard t-${gr.tone}" data-go='{"p":"grade","g":${gr.n}}'>
       <span class="dots"></span><span class="big" aria-hidden="true">${gr.icon}</span>
@@ -1824,9 +1826,37 @@ function teacher(){
 }
 function tLogin(){const v=($('#tcode')||{}).value;if(v===TCODE){TEA=true;tHome()}else{const e=$('#terr');if(e)e.textContent='Kod səhvdir.';sfx.bad()}}
 function tNote(){app.innerHTML=thdr('💡 Bilirdinizmi?','Yazdığınız qeyd ana menyunun yuxarısında hamıya görünür','tHome()')+dnEditorHTML();dnBind();window.scrollTo(0,0)}
+/* ---------- ✍️ Rəy və təkliflər: şagird yalnız öz rəylərini görür, müəllim hamısını ---------- */
+let FB=lsGet('hc14-fb',[]);if(!Array.isArray(FB))FB=[];let FBMSG='';
+function fbHome(){
+  const mine=FB.slice().reverse();
+  app.innerHTML=`<nav class="crumbs"><button class="homeb" data-go='{"p":"home"}'>🏠 Ana menyu</button></nav><section class="prof"><h3>✍️ Rəy və təklifləriniz</h3><p class="note">Fikriniz bizim üçün çox vacibdir!<br>🔒 Rəyinizi yalnız Samir müəllim oxuyur.</p><textarea id="fbx" rows="5" maxlength="2000" placeholder="Məs: 3-cü sinfə daha çox oyun əlavə olunsun…" style="width:100%;box-sizing:border-box;font:inherit;font-size:16px;font-weight:700;padding:12px 14px;border:2px solid #D5DBE8;border-radius:14px;resize:vertical"></textarea>${FBMSG?`<p class="note" style="color:#1E8E4E;font-weight:900">${esc(FBMSG)}</p>`:''}<button class="btn" onclick="fbSend()">Göndər</button></section>
+  <h3 style="margin:18px 0 8px;font-size:17px;font-weight:900">Mənim rəylərim (${mine.length})</h3>`+(mine.length?`<div class="tlist">${mine.map(f=>`<div class="titem"><span style="white-space:pre-wrap"><small>${dOnly(f.at)}</small><br>${esc(f.x)}</span></div>`).join('')}</div>`:`<p class="note">Hələ rəy yazmamısınız.</p>`);
+  FBMSG='';window.scrollTo(0,0);
+}
+function fbSend(){
+  const e=document.getElementById('fbx'),x=(e.value||'').trim();
+  if(!x){e.focus();e.placeholder='Əvvəlcə rəyinizi yazın…';return}
+  const at=Date.now();FB.push({x,at});lsSet('hc14-fb',FB.slice(-100));
+  qPush({a:'fb',...regFields(),x,at});qFlush();
+  FBMSG='✅ Təşəkkür edirik! Rəyiniz göndərildi.';fbHome();
+}
+let TFB={rows:null,err:''};
+async function tFb(reload){
+  if(!TFB.rows||reload){app.innerHTML=thdr('Rəy və təkliflər','Yüklənir…','tHome()');TFB.err='';
+    const key=lsGet('hc14-tkey','');
+    if(!key)TFB.err='Əvvəlcə "Cədvəl açarı"nı daxil edin.';
+    else try{const r=await fetch(SHEET_URL+'?a=fbs&key='+encodeURIComponent(key)+'&_='+Date.now());const o=await r.json();
+      if(o.error)TFB.err=o.error==='key'?'Cədvəl açarı səhvdir.':o.error==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Xəta: '+o.error;else TFB.rows=o.rows||[]}
+    catch(e){TFB.err='Yükləmək alınmadı. İnterneti yoxlayın.'}}
+  const L=(TFB.rows||[]).slice().sort((a,b)=>(+b.at||0)-(+a.at||0));
+  app.innerHTML=thdr('Rəy və təkliflər',L.length+' rəy','tHome()')+(TFB.err?`<p class="perr">${esc(TFB.err)}</p>`:'')+`<div class="row" style="justify-content:flex-start"><button class="btn" onclick="tFb(true)">↻ Yenilə</button></div><div class="tlist">`+L.map(f=>{const t=esc(f.tel);return `<div class="titem" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b>${esc(f.ad)} ${esc(f.soyad)}</b> <em class="tag">${esc(f.rol||'')}</em><br><small>+994 ${t} · ${dOnly(f.at)}</small><div style="white-space:pre-wrap;margin-top:6px;font-weight:700">${esc(f.x)}</div></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener">💬</a></div>`}).join('')+(L.length?'':'<p class="note">Hələ rəy yoxdur.</p>')+`</div>`;
+  window.scrollTo(0,0);
+}
 function tHome(){
   app.innerHTML=thdr('Müəllim paneli','Bölməni seçin','')+(TMSG?`<p class="tmsg">${esc(TMSG)}</p>`:'')+`<div class="tasks">
    <button class="task done" onclick="TU.q='';tUsers()"><span class="ti">👥</span><span class="tt"><b>İstifadəçilər</b><small>Qeydiyyatdan keçənlər · zəng, WhatsApp, blok</small></span></button>
+   <button class="task done" onclick="tFb(true)"><span class="ti">✍️</span><span class="tt"><b>Rəy və təkliflər</b><small>Şagird və müəllimlərin yazdıqları</small></span></button>
    <button class="task done" onclick="tNote()"><span class="ti">💡</span><span class="tt"><b>Bilirdinizmi? · Günün qeydi</b><small>${dnOn(DNOTE)?'Hamıda göstərilir ✓':'Hazırda gizlidir — yazın və göstərin'}</small></span></button>
    <button class="task done" onclick="tKey()"><span class="ti">🔑</span><span class="tt"><b>Cədvəl açarı</b><small>${lsGet('hc14-tkey','')?'Daxil edilib ✓':'Daxil edilməyib'}</small></span></button></div>
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
