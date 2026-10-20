@@ -252,7 +252,7 @@ function renderHome(){
   <section class="hello"><h2>${name?`Salam, ${esc(name)}! 👋`:"Salam! Sinfini seç 👋"}</h2>
   <p>Hər sinifdə dərsliyin bütün unitləri var. Unitin içində sözləri öyrənirsən, Student Book və Workbook tapşırıqlarını edirsən, oyun oynayırsan, video izləyirsən və sonda test yazırsan.</p></section>
   ${profHTML()}
-  <button class="btn fbtile" data-go='{"p":"fb"}' style="display:flex;width:100%;align-items:center;gap:10px;justify-content:flex-start;background:#EEF0FF;color:#1F2A6B;border:2px solid #5B6CD9;margin:10px 0"><span style="font-size:22px">✍️</span><span style="text-align:left"><b style="display:block">Rəy və təklifləriniz</b><small style="font-weight:700">Yazın — yalnız Samir müəllim oxuyur</small></span></button>
+  <button class="btn fbtile" data-go='{"p":"fb"}' style="display:flex;width:100%;align-items:center;gap:10px;justify-content:flex-start;background:#D32F2F;color:#fff;border:2.5px solid #7F0000;margin:10px 0;box-shadow:0 5px 0 #7F0000"><span style="font-size:22px">✍️</span><span style="text-align:left"><b style="display:block">Rəy və təklifləriniz</b><small style="font-weight:700">Yazın — yalnız Samir müəllim oxuyur</small></span></button>
   <section class="grades">${GRADES.map(gr=>{ const p=gradePct(gr.n); return `
     <button class="gcard t-${gr.tone}" data-go='{"p":"grade","g":${gr.n}}'>
       <span class="dots"></span><span class="big" aria-hidden="true">${gr.icon}</span>
