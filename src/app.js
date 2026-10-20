@@ -247,6 +247,7 @@ function gradePct(g){ const gr=grade(g); let t=0,d=0; gr.units.forEach((_,u)=>{ 
 function renderHome(){
   const name = REG && REG.ad ? REG.ad : "";
   app.innerHTML = `
+  <div class="dnote-slot hc-dn">${dnHTML()}</div>
   <section class="hello"><h2>${name?`Salam, ${esc(name)}! 👋`:"Salam! Sinfini seç 👋"}</h2>
   <p>Hər sinifdə dərsliyin bütün unitləri var. Unitin içində sözləri öyrənirsən, Student Book və Workbook tapşırıqlarını edirsən, oyun oynayırsan, video izləyirsən və sonda test yazırsan.</p></section>
   ${profHTML()}
@@ -879,9 +880,11 @@ function teacher(){
   const i=$('#tcode');if(i)i.focus();window.scrollTo(0,0);
 }
 function tLogin(){const v=($('#tcode')||{}).value;if(v===TCODE){TEA=true;tHome()}else{const e=$('#terr');if(e)e.textContent='Kod səhvdir.';sfx.bad()}}
+function tNote(){app.innerHTML=thdr('💡 Bilirdinizmi?','Yazdığınız qeyd ana menyunun yuxarısında hamıya görünür','tHome()')+dnEditorHTML();dnBind();window.scrollTo(0,0)}
 function tHome(){
   app.innerHTML=thdr('Müəllim paneli','Bölməni seçin','')+(TMSG?`<p class="tmsg">${esc(TMSG)}</p>`:'')+`<div class="tasks">
    <button class="task done" onclick="TU.q='';tUsers()"><span class="ti">👥</span><span class="tt"><b>İstifadəçilər</b><small>Qeydiyyatdan keçənlər · zəng, WhatsApp, blok</small></span></button>
+   <button class="task done" onclick="tNote()"><span class="ti">💡</span><span class="tt"><b>Bilirdinizmi? · Günün qeydi</b><small>${dnOn(DNOTE)?'Hamıda göstərilir ✓':'Hazırda gizlidir — yazın və göstərin'}</small></span></button>
    <button class="task done" onclick="tKey()"><span class="ti">🔑</span><span class="tt"><b>Cədvəl açarı</b><small>${lsGet('hc14-tkey','')?'Daxil edilib ✓':'Daxil edilməyib'}</small></span></button></div>
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
   window.scrollTo(0,0);
@@ -900,7 +903,7 @@ async function tFetch(kind){
   }catch(e){TU.err='Məlumatı yükləmək alınmadı. İnterneti yoxlayın.'}
 }
 const dOnly=t=>{if(!t)return '';const d=new Date(+t||t);return isNaN(d)?String(t):`${z2(d.getDate())}.${z2(d.getMonth()+1)}.${d.getFullYear()} ${z2(d.getHours())}:${z2(d.getMinutes())}`};
-function tSearch(fn){return `<input class="tsearch" placeholder="Axtar: ad, soyad, telefon…" value="${esc(TU.q)}" oninput="TU.q=this.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{${fn}();const i=document.querySelector('.tsearch');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)">`}
+function tSearch(fn,ph){return `<input class="tsearch" placeholder="${ph||'Axtar: ad, soyad, bölmə…'}" value="${esc(TU.q)}" oninput="TU.q=this.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{${fn}();const i=document.querySelector('.tsearch');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250)">`}
 function tToast(m){let t=document.getElementById('ttoast');if(!t){t=document.createElement('div');t.id='ttoast';t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;background:#1F2547;color:#fff;padding:12px 18px;border-radius:14px;font-weight:800;font-size:15px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100% - 32px);text-align:center;transition:opacity .3s';document.body.appendChild(t)}
   t.textContent=m;t.style.opacity='1';clearTimeout(window._tt);window._tt=setTimeout(()=>{t.style.opacity='0'},2600)}
 /* 💳 Ödəniş: "elaqe" sütunu indi ödəniş tarixini saxlayır; bu tarixdən əvvəlki köhnə "Əlaqə saxlanılıb" işarələri sayılmır */
@@ -918,10 +921,10 @@ async function tUsers(reload){
   const fb=(on,js,lab)=>`<button class="btn ${on?'':'ghost'}" onclick="${js}">${lab}</button>`;
   h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+cR('Müəllim')+')'],['Tələbə','🎓 Tələbələr ('+cR('Tələbə')+')']].map(([f,l])=>fb(TU.r===f,`TU.r='${f}';TU.f='Yeni';tUsers()`,l)).join('')}</div>`;
   if(TU.r)h+=`<div class="row" style="justify-content:flex-start;align-items:center"><b>${TU.r==='Müəllim'?'Müəllimlər':'Tələbələr'}:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+RL.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+RL.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+RL.filter(u=>u.blok).length+')']].map(([f,l])=>fb(TU.f===f,`TU.f='${f}';tUsers()`,l)).join('')}</div>`;
-  h+=tSearch('tUsers');
+  h+=tSearch('tUsers','Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…');
   const okF=u=>!TU.r||!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):true);
-  const rows=L.filter(u=>(!TU.r||u.rol===TU.r)&&okF(u)&&(!q||[u.ad,u.soyad,u.tel].join(' ').toLowerCase().includes(q))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${t}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" onclick="tWa('${t}')">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
+  const rows=L.filter(u=>q.trim()?uHit(u,q):((!TU.r||u.rol===TU.r)&&okF(u))).sort((a,b)=>(+b.son||0)-(+a.son||0));
+  h+=`<p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${telHL(u.tel,q)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" onclick="tWa('${t}')">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div>`;
   app.innerHTML=h;window.scrollTo(0,same?y:0);
 }
 /* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
@@ -948,10 +951,95 @@ async function tResults(reload){
   app.innerHTML=h;
 }
 
+const DN_LS='hc14-note',DN_V='';
+/* qeyd Google Cədvəldə "Günün qeydi" vərəqində saxlanılır (Kod.gs: a=note) */
+async function dnPull(){if(!SHEET_URL)return;try{const r=await fetch(SHEET_URL+'?a=note&_='+Date.now());const o=await r.json();if(o&&!o.error)dnTake(o.note||null)}catch(e){}}
+async function DN_SET(n){const key=lsGet('hc14-tkey','');if(!SHEET_URL)throw new Error('nosheet');if(!key)throw new Error('nokey');
+  const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'note',key,note:n})});
+  const o=await r.json();if(!o.ok)throw new Error(o.error||'x')}
+/* ---------- 💡 Bilirdinizmi? (Günün qeydi): müəllim panelindən yazılır, hamının ekranında görünür ---------- */
+const DN_TYPES=['💡 Bilirdinizmi?','📘 Günün qaydası','💬 Günün sözü','❓ Günün sualı','📌 Günün qeydi'];
+const dnEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let DNOTE=(()=>{try{return JSON.parse(localStorage.getItem(DN_LS)||'null')}catch(e){return null}})();
+const dnKeep=n=>{try{localStorage.setItem(DN_LS,JSON.stringify(n||null))}catch(e){}};
+const dnFmt=s=>dnEsc(s).replace(/\*([^*\n]+)\*/g,'<mark class="dn-hl">$1</mark>').replace(/\n/g,'<br>');
+const dnDate=t=>{const d=new Date(+t);return isNaN(d)?'':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear()};
+const dnOn=n=>!!(n&&n.on!==false&&String(n.x||'').trim());
+function dnHTML(n,v){n=n===undefined?DNOTE:n;if(!dnOn(n))return '';
+  return `<section class="dnote${v?' dn-'+v:''}" role="note"><i class="dn-pin" aria-hidden="true">💡</i><div class="dn-h"><span class="dn-t">${dnEsc(n.t||DN_TYPES[0])}</span>${n.at?`<span class="dn-d">${dnDate(n.at)}</span>`:''}</div><div class="dn-x">${dnFmt(n.x)}</div></section>`}
+function dnPaint(){document.querySelectorAll('.dnote-slot').forEach(el=>{el.innerHTML=dnHTML(DNOTE,el.dataset.v);const p=el.closest('.dn-host');if(p)p.classList.toggle('has-note',dnOn(DNOTE))})}
+function dnTake(n){if(n===undefined)return;n=n||null;if(JSON.stringify(n)!==JSON.stringify(DNOTE)){DNOTE=n;dnKeep(n);dnPaint()}}
+/* müəllim paneli: redaktor */
+function dnEditorHTML(){const n=DNOTE||{},t=n.t||DN_TYPES[0];
+  return `<div class="dn-ed"><p class="dn-l">Başlıq</p><div class="dn-ty">${DN_TYPES.map(x=>`<button type="button" class="dn-tb${x===t?' on':''}" data-t="${dnEsc(x)}">${dnEsc(x)}</button>`).join('')}</div>
+  <input id="dn_t" class="dn-in" maxlength="40" value="${dnEsc(t)}" placeholder="və ya öz başlığınızı yazın">
+  <p class="dn-l">Mətn <small>— sözü *ulduz* arasında yazsanız, rəngli seçiləcək</small></p>
+  <textarea id="dn_x" class="dn-in" rows="6" maxlength="1500" placeholder="Məs: *Present Perfect* = have/has + V3&#10;I have just finished my homework.">${dnEsc(n.x||'')}</textarea>
+  <label class="dn-chk"><input type="checkbox" id="dn_on"${n.on===false?'':' checked'}> Hamının ekranında göstər</label>
+  <p class="dn-l">Önizləmə</p><div id="dn_pv"></div>
+  <div class="dn-bt"><button type="button" class="dn-b" id="dn_save">💾 Saxla və hamıya göstər</button><button type="button" class="dn-b gh" id="dn_hide">🙈 Qeydi gizlət</button></div><p class="dn-msg" id="dn_msg"></p></div>`}
+function dnBind(){const g=id=>document.getElementById(id),T=g('dn_t'),X2=g('dn_x'),O=g('dn_on'),P=g('dn_pv'),M=g('dn_msg');
+  const cur=()=>({on:O.checked,t:T.value.trim()||DN_TYPES[0],x:X2.value.trim(),at:Date.now()});
+  const pv=()=>{P.innerHTML=dnHTML(Object.assign(cur(),{on:true}),DN_V)||'<p class="dn-msg">Mətn yazın — burada necə görünəcəyi göstəriləcək.</p>'};
+  document.querySelectorAll('.dn-tb').forEach(b=>b.onclick=()=>{T.value=b.dataset.t;document.querySelectorAll('.dn-tb').forEach(x=>x.classList.toggle('on',x===b));pv()});
+  T.oninput=pv;X2.oninput=pv;O.onchange=pv;pv();
+  const save=async n=>{M.textContent='Saxlanılır…';
+    try{await DN_SET(n);DNOTE=n;dnKeep(n);dnPaint();M.textContent=dnOn(n)?'✅ Saxlanıldı — hamının ekranında görünür.':'✅ Qeyd gizlədildi.'}
+    catch(e){const m=String(e&&e.message);M.textContent=m==='nokey'?'Əvvəlcə "Cədvəl açarı"nı daxil edin.':m==='key'?'Cədvəl açarı səhvdir.':m==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Saxlamaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.'}};
+  g('dn_save').onclick=()=>{const n=cur();if(!n.x){M.textContent='Mətn boşdur.';return}n.on=true;O.checked=true;save(n)};
+  g('dn_hide').onclick=()=>{O.checked=false;pv();save(cur())};
+}
+/* 🔎 istifadəçi axtarışı: ad/soyad və ya nömrənin istənilən hissəsi (boşluq, 0, +994 fərq etmir) */
+const telD=x=>String(x||'').replace(/\D/g,'');
+const qTel=q=>{let d=telD(q);if(d.length>9&&d.startsWith('994'))d=d.slice(3);if(d.length===10&&d[0]==='0')d=d.slice(1);return d};
+const lc=s=>String(s||'').toLocaleLowerCase('az');
+function telSpan(t,q){const d=telD(q);if(!d)return [-1,-1];const a=qTel(q);let i=t.indexOf(a);if(a&&i>=0)return [i,i+a.length];
+  i=('0'+t).indexOf(d);if(i>=0)return [Math.max(0,i-1),i-1+d.length];i=('994'+t).indexOf(d);if(i>=0)return [Math.max(0,i-3),i-3+d.length];return [-1,-1]}
+function uHit(u,q){q=lc(q).trim();if(!q)return true;const t=telD(u.tel);
+  if(telD(q)&&telSpan(t,q)[0]<0)return false;
+  const words=q.replace(/[\d+()\-.]/g,' ').split(/\s+/).filter(Boolean),nm=lc([u.ad,u.soyad,u.rol,u.sayt].join(' '));
+  return words.every(w=>nm.includes(w))}
+function telHL(tel,q){const t=telD(tel),[s,e]=telSpan(t,q||''),G=t.length===9?[2,5,7]:[];let h='',on=false;
+  [...t].forEach((c,j)=>{const m=j>=s&&j<e;if(G.includes(j)){if(on){h+='</mark>';on=false}h+=' '}if(m&&!on){h+='<mark class="thl">';on=true}if(!m&&on){h+='</mark>';on=false}h+=c});
+  return h+(on?'</mark>':'')}
+(function(){const s=document.createElement('style');s.textContent=`
+.dnote{position:relative;overflow:hidden;padding:14px 16px 16px;border-radius:20px;color:#2B2200;text-align:left;
+ background:radial-gradient(circle at 1px 1px,rgba(140,100,0,.16) 1.2px,transparent 0) 0 0/15px 15px,linear-gradient(140deg,#FFF9E0 0%,#FFE9A6 100%);
+ border:1.5px solid #EBC75A;box-shadow:0 16px 30px -22px rgba(150,100,0,.8),inset 0 1px 0 #fff}
+.dnote::after{content:"";position:absolute;right:-38px;top:-38px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,196,0,.45),transparent 70%);pointer-events:none}
+.dn-pin{position:absolute;right:10px;top:6px;font-style:normal;font-size:28px;line-height:1;z-index:1;filter:drop-shadow(0 0 8px rgba(255,200,0,.95));animation:dnGlow 2.6s ease-in-out infinite}
+@keyframes dnGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(255,200,0,.6));transform:rotate(-6deg)}50%{filter:drop-shadow(0 0 14px rgba(255,215,0,1));transform:rotate(6deg)}}
+@media (prefers-reduced-motion:reduce){.dn-pin{animation:none}}
+.dn-h{position:relative;z-index:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 34px 8px 0}
+.dn-t{display:inline-flex;align-items:center;background:#2B2200;color:#FFE38A;border-radius:999px;padding:4px 12px;font-weight:900;font-size:14px;letter-spacing:.01em}
+.dn-d{font-size:12px;font-weight:800;opacity:.7}
+.dn-x{position:relative;z-index:1;font-size:17px;line-height:1.5;font-weight:700;overflow-wrap:anywhere}
+.dn-hl{background:#fff;color:#C2261B;padding:0 5px;border-radius:6px;font-weight:900;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.dnote.dn-night{color:#fff;border:1.5px solid rgba(255,255,255,.35);box-shadow:0 18px 36px -20px rgba(30,20,120,.9);
+ background:radial-gradient(circle at 88% 12%,rgba(255,255,255,.28) 0 9%,transparent 10%),radial-gradient(circle at 12% 110%,rgba(255,210,90,.35),transparent 45%),repeating-linear-gradient(0deg,rgba(255,255,255,.08) 0 1px,transparent 1px 27px),linear-gradient(135deg,#7A5BF2 0%,#4D5CF0 55%,#2A3FB8 100%)}
+.dnote.dn-night::after{background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%)}
+.dn-night .dn-t{background:#fff;color:#3B2FB8}.dn-night .dn-d{color:#E4E1FF;opacity:.9}
+.dn-night .dn-x{font-size:16px;max-height:260px;overflow:auto;text-shadow:0 1px 1px rgba(0,0,0,.15)}
+.dn-night .dn-hl{background:#FFD54A;color:#2B1F7A;box-shadow:none}
+mark.thl{background:#FFE14D;color:#1a1a1a;border-radius:4px;padding:0 1px;font-weight:900}
+.dn-ed{display:grid;gap:8px;max-width:620px}
+.dn-l{margin:8px 0 0;font-weight:900;font-size:15px}.dn-l small{font-weight:700;opacity:.7}
+.dn-ty{display:flex;flex-wrap:wrap;gap:6px}
+.dn-tb{font:inherit;font-size:14px;font-weight:800;padding:7px 12px;border-radius:999px;border:1.5px solid #D9C27A;background:#FFF8DC;color:#3B2A00;cursor:pointer}
+.dn-tb.on{background:#2B2200;color:#FFE38A;border-color:#2B2200}
+.dn-in{width:100%;box-sizing:border-box;font:inherit;font-size:16px;font-weight:700;padding:10px 12px;border:2px solid #D9DEE8;border-radius:12px;background:#fff;color:#1d2433;resize:vertical}
+.dn-chk{display:flex;align-items:center;gap:8px;font-weight:800;margin-top:4px}.dn-chk input{width:20px;height:20px}
+.dn-bt{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.dn-b{font:inherit;font-size:15px;font-weight:900;padding:10px 16px;border-radius:12px;border:0;background:#2F7D32;color:#fff;cursor:pointer}
+.dn-b.gh{background:#EEF0F5;color:#333}
+.dn-msg{margin:4px 0 0;font-weight:800;font-size:15px;opacity:.85}
+.dnote-slot:empty{display:none}.hc-dn{margin:0 0 14px}
+`;document.head.appendChild(s)})();
+
 /* ---------- boot ---------- */
 function boot(){
   if(!REG){regScreen();return}
   if(lsGet('hc14-blok',0)){blockScreen();syncPing();return}
-  render();LASTPING=Date.now();syncPing();
+  render();LASTPING=Date.now();syncPing();dnPull();
 }
 boot();

@@ -121,9 +121,20 @@ function userSet(o, now) {
   return { ok: true, t: o.v ? now : '' };
 }
 
-/* Müəllim paneli oxuyur: ?a=users&key=… */
+/* 💡 Bilirdinizmi? (Günün qeydi): "Günün qeydi" vərəqinin A1 xanasında JSON; B1/C1 — oxumaq üçün başlıq və mətn */
+function noteSheet() {
+  const ss = SpreadsheetApp.getActive();
+  return ss.getSheetByName('Günün qeydi') || ss.insertSheet('Günün qeydi');
+}
+function noteGet() {
+  const v = noteSheet().getRange('A1').getValue();
+  try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
+}
+
+/* Oxu: ?a=note (hamı üçün) · ?a=users&key=… (müəllim paneli) */
 function doGet(e) {
   const p = e.parameter || {};
+  if (p.a === 'note') return out({ note: noteGet() });
   if (p.key !== KEY) return out({ error: 'key' });
   if (p.a === 'users') return out({ rows: usersRows(usersSheet()) });
   return out({ error: 'a' });
@@ -139,6 +150,11 @@ function doPost(e) {
     if (o.a === 'ping') return out(userPing(o, now));
     if (o.key !== KEY) return out({ ok: false, error: 'key' });
     if (o.a === 'block' || o.a === 'elaqe') return out(userSet(o, now));
+    if (o.a === 'note') {
+      const n = o.note || null;
+      noteSheet().getRange('A1:C1').setNumberFormat('@').setValues([[JSON.stringify(n), n ? (n.t || '') : '', n ? (n.on === false ? '(gizli) ' : '') + (n.x || '') : '']]);
+      return out({ ok: true });
+    }
     return out({ ok: false, error: 'a' });
   } finally {
     lock.releaseLock();
