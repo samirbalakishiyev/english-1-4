@@ -18,7 +18,12 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://samirbalakishiyev.github.io/english-1-4/og-image.png">
-<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}.wstile{display:flex!important;width:100%;align-items:center;gap:10px;justify-content:flex-start!important;background:#EAF0FB!important;color:#1F3A73!important;border:2.5px solid #3F67B5!important;margin:0 0 10px!important;box-shadow:0 5px 0 #3F67B5!important}
+.wsq{width:100%;box-sizing:border-box;font:inherit;font-size:18px;font-weight:700;padding:12px 14px;border:2.5px solid #3F67B5;border-radius:16px;background:#fff;color:#1F2A44;margin:6px 0 12px}
+.wsg{background:#fff;border:2px solid #E2E8F0;border-radius:18px;padding:10px 12px;margin-bottom:10px}.wsw{font-size:17px;margin-bottom:6px}.wsw b{color:#2B4F99;font-size:20px}.wsw span{font-weight:700;color:#5B6B80}
+.wsl{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;font-size:14.5px;font-weight:700;color:#1F2A44;background:#F5F8FD;border:1.5px solid #E2E8F0;border-radius:12px;padding:8px 10px;margin-top:6px;cursor:pointer}.wsl small{display:block;font-weight:600;color:#5B6B80;font-size:13px;margin-top:2px}.wsl em{margin-left:auto;font-style:normal;color:#2B4F99;font-weight:900;white-space:nowrap}
+.wsnone{background:#fff;border:2px dashed #CBD5E1;border-radius:18px;padding:18px;text-align:center;font-size:16px}
+</style>
 </head><body>
 <title>English 1–4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1199,7 +1204,38 @@ function render(){
   if (v.p==="act") return renderAct(v);
   if (v.p==="teacher") return teacher();
   if (v.p==="fb") return fbHome();
+  if (v.p==="ws") return wsHome();
 }
+/* ================= 🔎 Söz axtar: söz hansı sinifdə, hansı unitdədir ================= */
+const wsF=s=>String(s||'').toLocaleLowerCase('az').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ö/g,'o').replace(/ü/g,'u').replace(/[’']/g,"'").trim();
+let WSI=null,WSQ='';
+function wsIndex(){
+  if(WSI)return WSI;const L=[];
+  GRADES.forEach(gr=>gr.units.forEach((u,ui)=>{
+    const where=`${gr.name} → Unit ${ui+1}: ${u.t}`;
+    (u.w||[]).forEach(w=>L.push({en:w[0],tr:w[1]+((typeof RU!=='undefined'&&RU[w[0]])?' · '+RU[w[0]]:''),where:where+' → Sözlər',g:gr.n,u:ui,extra:'',k:wsF(w[0]),kt:wsF(w[1])}));
+    (u.s||[]).forEach(s=>L.push({en:'',sent:s[0],tr:s[1],where:where+' → Cümlələr',g:gr.n,u:ui,extra:s[0],k:wsF(s[0]),kt:''}));
+  }));
+  return WSI=L;
+}
+function wsHome(){
+  app.innerHTML=`${crumbs([])}<section class="hello"><h2>🔎 Söz axtar</h2><p>Söz hansı sinifdə və hansı unitdədir? İngiliscə söz və ya tərcümə yazın.</p></section><input id="wsq" class="wsq" placeholder="🔎 Məs: apple və ya alma" autocomplete="off" value="${esc(WSQ)}"><div id="wsr"></div>`;
+  const i=document.getElementById('wsq');i.oninput=()=>{clearTimeout(window._wst);window._wst=setTimeout(()=>wsRun(i.value),200)};i.focus();wsRun(WSQ);
+}
+function wsRun(q){
+  WSQ=q;const box=document.getElementById('wsr');if(!box)return;const f=wsF(q);
+  if(f.length<2){box.innerHTML='<p class="note">Ən azı 2 hərf yazın.</p>';return}
+  const L=wsIndex(),re=new RegExp('(^|[^a-z])'+f.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  const words=L.filter(x=>x.en&&(x.k.includes(f)||(f.length>=3&&x.kt.includes(f)))),sents=L.filter(x=>!x.en&&re.test(x.k));
+  if(!words.length&&!sents.length){box.innerHTML=`<div class="wsnone">😕 <b>${esc(q)}</b> — bu söz tətbiqdə yoxdur.</div>`;return}
+  const rank=x=>x.k===f?0:x.k.startsWith(f)?1:2,G=new Map();
+  words.sort((a,b)=>rank(a)-rank(b)||a.k.length-b.k.length).forEach(x=>{if(!G.has(x.k))G.set(x.k,{en:x.en,tr:x.tr,locs:[]});const g=G.get(x.k);if(!g.locs.some(y=>y.where===x.where))g.locs.push(x)});
+  const loc=x=>`<button class="wsl" type="button" data-g="${x.g}" data-u="${x.u}"><span>📍 ${esc(x.where)}${x.extra?`<small>${esc(x.extra)}</small>`:''}</span><em>Aç ›</em></button>`;
+  let h=[...G.values()].slice(0,40).map(g=>`<div class="wsg"><div class="wsw"><b>${esc(g.en)}</b> — <span>${esc(g.tr)}</span></div>${g.locs.map(loc).join('')}</div>`).join('');
+  if(sents.length)h+=`<div class="wsg"><div class="wsw"><b>Cümlələrdə</b> <span>(${sents.length})</span></div>${sents.slice(0,20).map(loc).join('')}</div>`;
+  box.innerHTML=h;box.querySelectorAll('.wsl').forEach(b=>b.onclick=()=>go({p:'unit',g:+b.dataset.g,u:+b.dataset.u}));
+}
+
 function crumbs(items){ return `<nav class="crumbs"><button class="homeb" data-go='{"p":"home"}'>🏠 Ana menyu</button>${items.map((it,i)=> i===0 ? `<button class="back" data-go='${JSON.stringify(it[1])}'>← Geri</button>` : (it[1]?`<button data-go='${JSON.stringify(it[1])}'>${it[0]}</button>`:`<span>${it[0]}</span>`)).join("")}</nav>`; }
 app.addEventListener("click", e=>{ const b=e.target.closest("[data-go]"); if(b) go(JSON.parse(b.dataset.go)); });
 
@@ -1212,6 +1248,7 @@ function renderHome(){
   <p>Hər sinifdə dərsliyin bütün unitləri var. Unitin içində sözləri öyrənirsən, Student Book və Workbook tapşırıqlarını edirsən, oyun oynayırsan, video izləyirsən və sonda test yazırsan.</p></section>
   ${profHTML()}
   <button class="btn fbtile" data-go='{"p":"fb"}' style="display:flex;width:100%;align-items:center;gap:10px;justify-content:flex-start;background:#D32F2F;color:#fff;border:2.5px solid #7F0000;margin:10px 0;box-shadow:0 5px 0 #7F0000"><span style="font-size:22px">✍️</span><span style="text-align:left"><b style="display:block">Rəy və təklifləriniz</b><small style="font-weight:700">Yazın — yalnız Samir müəllim oxuyur</small></span></button>
+  <button class="btn wstile" data-go='{"p":"ws"}' type="button"><span style="font-size:22px">🔎</span><span style="text-align:left"><b style="display:block">Söz axtar</b><small style="font-weight:700">Söz hansı sinifdə, hansı unitdədir?</small></span></button>
   <section class="grades">${GRADES.map(gr=>{ const p=gradePct(gr.n); return `
     <button class="gcard t-${gr.tone}" data-go='{"p":"grade","g":${gr.n}}'>
       <span class="dots"></span><span class="big" aria-hidden="true">${gr.icon}</span>
