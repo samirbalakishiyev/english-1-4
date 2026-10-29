@@ -784,7 +784,7 @@ const devName=()=>{const u=navigator.userAgent||'';return /iPhone|iPad|iPod/.tes
 let REG=lsGet('hc14-reg',null);
 
 /* ---------- sync (Google Cədvəl) ---------- */
-function regFields(){const r=REG||{};return {ad:r.ad,soyad:r.soyad,tel:r.tel,rol:r.rol,qeyd:r.at,sayt:SITE}}
+function regFields(){const r=REG||{};return {ad:r.ad,soyad:r.soyad,yas:r.yas||undefined,tel:r.tel,rol:r.rol,qeyd:r.at,sayt:SITE}}
 function qPush(o){const q=lsGet('hc14-q',[]);q.push(o);lsSet('hc14-q',q.slice(-200))}
 let FLUSHING=false;
 async function qFlush(){
@@ -820,7 +820,7 @@ function regScreen(){
   const r=RG; const f=(id,lab,ph)=>`<label>${lab}<input id="${id}" placeholder="${ph}" autocomplete="off" value="${esc(r[id]||'')}"></label>`;
   const rb=(v,lab)=>`<button type="button" class="rolebtn${r.rol===v?' on':''}" data-rol="${v}">${lab}</button>`;
   app.innerHTML=`<section class="regbox"><h2>Qeydiyyat 👋</h2><p class="note" style="font-size:15px">Başlamaq üçün bir dəfə qeydiyyatdan keçin. Bu məlumatlar bir daha soruşulmayacaq.</p><div class="pf">
-   ${f('rg_ad','Ad','Məs: Ruslan')}${f('rg_soyad','Soyad','Məs: Əlizadə')}
+   ${f('rg_ad','Ad','Məs: Ruslan')}${f('rg_soyad','Soyad','Məs: Əlizadə')}<label>Yaşınız<input id="rg_yas" inputmode="numeric" maxlength="2" placeholder="Məs: 14" autocomplete="off" value="${esc(r.rg_yas||'')}"></label>
    <label>Siz kimsiniz?</label><div class="row" style="justify-content:stretch">${rb('Tələbə','🎓 Şagird')}${rb('Müəllim','👩‍🏫 Müəllim')}</div>
    <label>Telefon nömrəsi<div class="tel"><span>+994</span><input id="rg_tel" inputmode="numeric" maxlength="12" placeholder="55 123 45 67" value="${esc(r.rg_tel||'')}"></div></label>
    <p class="perr">${esc(r.err||'')}</p><button class="btn sendbtn" id="rgok" type="button">Qeydiyyatdan keç və başla →</button></div></section>`;
@@ -828,16 +828,17 @@ function regScreen(){
   $('#rg_tel').oninput=e=>regTel(e.target); $('#rgok').onclick=regSubmit;
 }
 function regTel(el){let d=el.value.replace(/\D/g,'');if(d.startsWith('994'))d=d.slice(3);if(d.startsWith('0'))d=d.slice(1);d=d.slice(0,9);el.value=[d.slice(0,2),d.slice(2,5),d.slice(5,7),d.slice(7,9)].filter(Boolean).join(' ')}
-function regRead(){['rg_ad','rg_soyad','rg_tel'].forEach(k=>{const e=document.getElementById(k);if(e)RG[k]=e.value})}
+function regRead(){['rg_ad','rg_soyad','rg_yas','rg_tel'].forEach(k=>{const e=document.getElementById(k);if(e)RG[k]=e.value})}
 function regSubmit(){
   regRead();const cl=v=>String(v||'').trim().replace(/\s+/g,' ');
-  const ad=cl(RG.rg_ad),soyad=cl(RG.rg_soyad),tel=normTel(RG.rg_tel||'');
+  const ad=cl(RG.rg_ad),soyad=cl(RG.rg_soyad),tel=normTel(RG.rg_tel||''),yas=/^\d{1,2}$/.test(cl(RG.rg_yas))?+cl(RG.rg_yas):0;
   let err='';
   if(!ad)err='Adınızı yazın.';else if(!soyad)err='Soyadınızı yazın.';
+  else if(!(yas>=4&&yas<=99))err='Yaşınızı rəqəmlə yazın (məs: 14).';
   else if(!RG.rol)err='Şagird və ya Müəllim düyməsini seçin.';
   else if(!telOK(tel))err='Telefon nömrəsi düzgün deyil. Nümunə: 55 123 45 67';
   if(err){RG.err=err;regScreen();return}
-  REG={ad,soyad,tel,rol:RG.rol,at:Date.now()};lsSet('hc14-reg',REG);
+  REG={ad,soyad,yas,tel,rol:RG.rol,at:Date.now()};lsSet('hc14-reg',REG);
   if(!PR.n){PR.n=ad+' '+soyad;psave()}
   VIEW={p:'home'};render();syncPing();
 }
