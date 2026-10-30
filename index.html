@@ -23,6 +23,12 @@
 .wsg{background:#fff;border:2px solid #E2E8F0;border-radius:18px;padding:10px 12px;margin-bottom:10px}.wsw{font-size:17px;margin-bottom:6px}.wsw b{color:#2B4F99;font-size:20px}.wsw span{font-weight:700;color:#5B6B80}
 .wsl{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;font-size:14.5px;font-weight:700;color:#1F2A44;background:#F5F8FD;border:1.5px solid #E2E8F0;border-radius:12px;padding:8px 10px;margin-top:6px;cursor:pointer}.wsl small{display:block;font-weight:600;color:#5B6B80;font-size:13px;margin-top:2px}.wsl em{margin-left:auto;font-style:normal;color:#2B4F99;font-weight:900;white-space:nowrap}
 .wsnone{background:#fff;border:2px dashed #CBD5E1;border-radius:18px;padding:18px;text-align:center;font-size:16px}
+.fbnew{margin-left:auto;background:#fff;color:#B71C1C;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:900;white-space:nowrap}
+.fbrep{flex-basis:100%;margin-top:4px;padding:10px 12px;border-radius:12px;background:#E3F5EA;border:1.5px solid #1E8E4E;color:#0F4D2A}.fbrep.nw{box-shadow:0 0 0 3px #1E8E4E44}.fbrep b{display:block;font-size:14px}.fbrep small{display:block;color:#3C7A55;font-weight:700;font-size:12px}.fbrep p{margin:4px 0 0;white-space:pre-wrap;font-weight:700}
+.tfbr,.tren{flex-basis:100%;display:grid;gap:6px;margin-top:4px}.tfbr textarea,.tren input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;font-weight:600;padding:8px 10px;border:1.5px solid #D5DBE8;border-radius:10px;background:#fff;resize:vertical}.tren label{display:grid;gap:2px;font-size:13px;font-weight:800;color:#5B6B80}.tren{padding:10px;border:1.5px solid #D5DBE8;border-radius:12px;background:#F7F9FC}
+.watpl{margin:0 0 10px;border:2px solid #25D366;border-radius:14px;background:#fff;overflow:hidden}.watpl>summary{cursor:pointer;padding:10px 12px;font-weight:900;color:#128C4A;list-style:none}.watpl>summary::-webkit-details-marker{display:none}.watpl>summary em{font-style:normal;font-size:12px;background:#25D366;color:#fff;border-radius:999px;padding:2px 8px;margin-left:4px}.watpl>summary em.no{background:#E2E8F0;color:#5B6B80}.watpl>summary small{color:#5B6B80;font-weight:700}.watpl>p,.watpl>small{margin:0 12px 8px;display:block}.watpl>p{font-size:13.5px;font-weight:600}.watpl textarea{display:block;width:calc(100% - 24px);margin:0 12px 8px;box-sizing:border-box;font:inherit;font-size:15px;font-weight:600;padding:10px;border:2px solid #D5DBE8;border-radius:12px;resize:vertical}
+.mechip{display:inline-block;margin:6px 0 2px;padding:5px 12px;border-radius:999px;border:1.5px solid #0E7C86;background:#E0F4F5;color:#0E5F66;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
+.restile{display:flex!important;width:100%;align-items:center;gap:10px;justify-content:flex-start!important;background:#E8F6EC!important;color:#1E6B3D!important;border:2.5px solid #2E9E55!important;margin:0 0 10px!important;box-shadow:0 5px 0 #2E9E55!important}
 </style>
 </head><body>
 <title>English 1–4</title>
@@ -1205,6 +1211,8 @@ function render(){
   if (v.p==="teacher") return teacher();
   if (v.p==="fb") return fbHome();
   if (v.p==="ws") return wsHome();
+  if (v.p==="me") return meEdit();
+  if (v.p==="res") return resHome();
 }
 /* ================= 🔎 Söz axtar: söz hansı sinifdə, hansı unitdədir ================= */
 const wsF=s=>String(s||'').toLocaleLowerCase('az').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ö/g,'o').replace(/ü/g,'u').replace(/[’']/g,"'").trim();
@@ -1217,6 +1225,16 @@ function wsIndex(){
     (u.s||[]).forEach(s=>L.push({en:'',sent:s[0],tr:s[1],where:where+' → Cümlələr',g:gr.n,u:ui,extra:s[0],k:wsF(s[0]),kt:''}));
   }));
   return WSI=L;
+}
+/* 📊 Nəticələrim: bütün nəticələr; göndərilməyənə toxunanda WhatsApp ilə müəllimə gedir */
+function resHome(){
+  const L=S.log.slice().reverse(),un=L.filter(e=>!e.sent),avg=L.length?Math.round(L.reduce((a,e)=>a+(+e.p||0),0)/L.length):0;
+  let h=`${crumbs([])}<section class="hello"><h2>📊 Nəticələrim</h2><p>${L.length} nəticə · orta bal ${avg}%${un.length?` · <b style="color:var(--bad)">${un.length} göndərilməyib</b>`:''}</p></section>`;
+  if(!hasPR())h+=`<p class="note">Nəticəni müəllimə göndərmək üçün ana səhifədə <b>«Nəticəni müəllimə göndər»</b> düyməsinə basıb adını, sinfini və müəllimin nömrəsini yaz.</p>`;
+  else if(un.length)h+=`<a class="btn wa sendbtn" href="${esc(waHref(un.slice().reverse().slice(-20)))}" target="_blank" rel="noopener" onclick="markSent([${un.slice(0,20).map(e=>e.at).join(',')}]);setTimeout(resHome,500)">${WAI}Göndərilməyənləri müəllimə göndər (${Math.min(un.length,20)})</a>`;
+  h+=`<div class="tlist" style="margin-top:12px">`+(L.length?L.map(e=>{const one=hasPR()&&!e.sent;const inner=`<span><b>${esc(e.sec)}</b><br><small>${dOnly(e.at)} · ${e.r}/${e.n} düz · ${e.sent?'✓ göndərilib':(hasPR()?'📤 toxun — müəllimə göndər':'⏳ göndərilməyib')}</small></span><span class="tag" style="flex:none;font-size:14px;${(+e.p)>=70?'background:var(--oks);color:var(--ok)':'background:var(--bads);color:var(--bad)'}">${e.p}%</span>`;
+    return one?`<a class="titem" style="text-decoration:none;color:inherit" href="${esc(waHref([e]))}" target="_blank" rel="noopener" onclick="markSent([${e.at}]);setTimeout(resHome,500)">${inner}</a>`:`<div class="titem">${inner}</div>`}).join(''):'<p class="note">Hələ nəticə yoxdur. Tapşırıq və testləri işlədikcə burada görünəcək.</p>')+`</div>`;
+  app.innerHTML=h;window.scrollTo(0,0);
 }
 function wsHome(){
   app.innerHTML=`${crumbs([])}<section class="hello"><h2>🔎 Söz axtar</h2><p>Söz hansı sinifdə və hansı unitdədir? İngiliscə söz və ya tərcümə yazın.</p></section><input id="wsq" class="wsq" placeholder="🔎 Məs: apple və ya alma" autocomplete="off" value="${esc(WSQ)}"><div id="wsr"></div>`;
@@ -1244,10 +1262,11 @@ function renderHome(){
   const name = REG && REG.ad ? REG.ad : "";
   app.innerHTML = `
   <div class="dnote-slot hc-dn">${dnHTML()}</div>
-  <section class="hello"><h2>${name?`Salam, ${esc(name)}! 👋`:"Salam! Sinfini seç 👋"}</h2>
+  <section class="hello"><h2>${name?`Salam, ${esc(name)}! 👋`:"Salam! Sinfini seç 👋"}</h2>${name?`<button type="button" class="mechip" data-go='{"p":"me"}'>👤 ${esc(REG.ad+' '+(REG.soyad||''))} ✏️</button>`:''}
   <p>Hər sinifdə dərsliyin bütün unitləri var. Unitin içində sözləri öyrənirsən, Student Book və Workbook tapşırıqlarını edirsən, oyun oynayırsan, video izləyirsən və sonda test yazırsan.</p></section>
   ${profHTML()}
   <button class="btn fbtile" data-go='{"p":"fb"}' style="display:flex;width:100%;align-items:center;gap:10px;justify-content:flex-start;background:#D32F2F;color:#fff;border:2.5px solid #7F0000;margin:10px 0;box-shadow:0 5px 0 #7F0000"><span style="font-size:22px">✍️</span><span style="text-align:left"><b style="display:block">Rəy və təklifləriniz</b><small style="font-weight:700">Yazın — yalnız Samir müəllim oxuyur</small></span></button>
+  <button class="btn restile" data-go='{"p":"res"}' type="button"><span style="font-size:22px">📊</span><span style="text-align:left"><b style="display:block">Nəticələrim</b><small style="font-weight:700">${S.log.length} nəticə${S.log.filter(e=>!e.sent).length?` · ${S.log.filter(e=>!e.sent).length} göndərilməyib`:''}</small></span></button>
   <button class="btn wstile" data-go='{"p":"ws"}' type="button"><span style="font-size:22px">🔎</span><span style="text-align:left"><b style="display:block">Söz axtar</b><small style="font-weight:700">Söz hansı sinifdə, hansı unitdədir?</small></span></button>
   <section class="grades">${GRADES.map(gr=>{ const p=gradePct(gr.n); return `
     <button class="gcard t-${gr.tone}" data-go='{"p":"grade","g":${gr.n}}'>
@@ -1256,6 +1275,7 @@ function renderHome(){
       <h3>${gr.name}</h3><p>${gr.sub} · ${gr.units.length} unit + əlavə materiallar</p>
       <div class="gmeta"><span>İrəliləyiş</span><span>${p}%</span></div><div class="bar"><i style="width:${p}%"></i></div>
     </button>`; }).join("")}</section>`;
+  fbBadge();
 }
 function unitDone(g,u){ const ts=unitTasks(g,u).flatMap(s=>s.tasks); const d=ts.filter(x=>S.prog[x.key]!=null).length; return {d, t:ts.length, test:S.prog[`g${g}u${u}-test`]}; }
 function renderGrade(g){
@@ -1833,6 +1853,7 @@ function regSubmit(){
   else if(!(yas>=4&&yas<=99))err='Yaşınızı rəqəmlə yazın (məs: 14).';
   else if(!RG.rol)err='Şagird və ya Müəllim düyməsini seçin.';
   else if(!telOK(tel))err='Telefon nömrəsi düzgün deyil. Nümunə: 55 123 45 67';
+  else if(tel===SAMIR_TEL&&!lsGet('hc14-tkey',''))err='Bu, Samir müəllimin nömrəsidir. Öz telefon nömrənizi yazın.';
   if(err){RG.err=err;regScreen();return}
   REG={ad,soyad,yas,tel,rol:RG.rol,at:Date.now()};lsSet('hc14-reg',REG);
   if(!PR.n){PR.n=ad+' '+soyad;psave()}
@@ -1875,44 +1896,91 @@ function thdr(title,sub,back){return `<nav class="crumbs"><button class="homeb" 
 function teacher(){
   document.body.className=app.className="t-g3";
   if(TEA)return tHome();
-  app.innerHTML=thdr('Müəllim paneli','Kodu daxil edin','')+`<form class="tlogin" onsubmit="event.preventDefault();tLogin()"><input id="tcode" type="password" inputmode="numeric" autocomplete="off" placeholder="Kod" aria-label="Kod"><button class="btn" type="submit">Daxil ol</button><p class="perr" id="terr"></p></form>`;
+  if(lsGet('hc14-tkey','')){TEA=true;return tHome()}
+  app.innerHTML=thdr('Müəllim paneli','Şifrəni daxil edin','')+`<form class="tlogin" onsubmit="event.preventDefault();tLogin()"><input id="tcode" type="password" autocomplete="current-password" placeholder="Şifrə" aria-label="Şifrə"><button class="btn" type="submit" id="tgo">Daxil ol</button><p class="perr" id="terr"></p></form>`;
   const i=$('#tcode');if(i)i.focus();window.scrollTo(0,0);
 }
-function tLogin(){const v=($('#tcode')||{}).value;if(v===TCODE){TEA=true;tHome()}else{const e=$('#terr');if(e)e.textContent='Kod səhvdir.';sfx.bad()}}
+/* 🔐 şifrə Google skriptində (ADMIN_PASS) yoxlanılır; düzgün olsa panel açarı bu cihazda saxlanılır */
+async function tLogin(){
+  const v=(($('#tcode')||{}).value||'').trim(),e=$('#terr'),b=$('#tgo');if(!v)return;if(b)b.disabled=true;if(e)e.textContent='Yoxlanılır…';
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'tlogin',p:v})});const o=await r.json();
+    if(o&&o.ok&&o.key){lsSet('hc14-tkey',o.key);TEA=true;TU.list=null;return tHome()}
+    if(e)e.textContent=o&&o.error==='wait'?'Çox səhv cəhd. 15 dəqiqə sonra yenidən yoxlayın.':o&&o.error==='nopass'?'Şifrə hələ Google Cədvəlin skriptində yazılmayıb.':o&&o.error==='pass'?'Şifrə səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).';sfx.bad();
+  }catch(x){if(e)e.textContent='İnternet bağlantısını yoxlayın.'}
+  if(b)b.disabled=false;
+}
+function tLogout(){lsSet('hc14-tkey','');TEA=false;TU.list=null;go({p:'home'})}
 function tNote(){app.innerHTML=thdr('💡 Bilirdinizmi?','Yazdığınız qeyd ana menyunun yuxarısında hamıya görünür','tHome()')+dnEditorHTML();dnBind();window.scrollTo(0,0)}
 /* ---------- ✍️ Rəy və təkliflər: şagird yalnız öz rəylərini görür, müəllim hamısını ---------- */
 let FB=lsGet('hc14-fb',[]);if(!Array.isArray(FB))FB=[];let FBMSG='';
-function fbHome(){
-  const mine=FB.slice().reverse();
+/* serverdəki rəylərim + müəllimin cavabları (hc14-fbs); oxunmuş cavablar hc14-fbseen-də */
+let FBS=lsGet('hc14-fbs',null),FBOPEN=false;
+const fbUnread=()=>{const seen=lsGet('hc14-fbseen',{});return (FBS||[]).filter(f=>f.rep&&(+f.rat||1)>(+seen[f.id]||0)).length};
+async function fbSync(){
+  if(!SHEET_URL||!REG||!REG.tel)return;
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbmine',tel:REG.tel})});const o=await r.json();
+    if(o&&o.ok&&Array.isArray(o.rows)){FBS=o.rows;lsSet('hc14-fbs',FBS);if(VIEW.p==='fb')fbHome(true);fbBadge()}}catch(e){}
+}
+function fbBadge(){const b=document.querySelector('.fbtile');const n=fbUnread();if(!b)return;let x=b.querySelector('.fbnew');if(n){if(!x){x=document.createElement('b');x.className='fbnew';b.appendChild(x)}x.textContent='💬 '+n+' yeni cavab'}else if(x)x.remove()}
+function fbHome(keep){
+  const srv=FBS||[],hidL=new Set(lsGet('hc14-fbhid',[]));
+  const loc=FB.filter(f=>!hidL.has(f.at)&&!srv.some(g=>Math.abs((+g.at||0)-f.at)<3000&&g.x===f.x)).map(f=>({id:'L'+f.at,at:f.at,x:f.x,pend:FBS!=null}));
+  const mine=srv.concat(loc).sort((a,b)=>(+b.at||0)-(+a.at||0)),seen=lsGet('hc14-fbseen',{});
   app.innerHTML=`<nav class="crumbs"><button class="homeb" data-go='{"p":"home"}'>🏠 Ana menyu</button></nav><section class="prof"><h3>✍️ Rəy və təklifləriniz</h3><p class="note">Fikriniz bizim üçün çox vacibdir!<br>🔒 Rəyinizi yalnız Samir müəllim oxuyur.</p><textarea id="fbx" rows="5" maxlength="2000" placeholder="Məs: 3-cü sinfə daha çox oyun əlavə olunsun…" style="width:100%;box-sizing:border-box;font:inherit;font-size:16px;font-weight:700;padding:12px 14px;border:2px solid #D5DBE8;border-radius:14px;resize:vertical"></textarea>${FBMSG?`<p class="note" style="color:#1E8E4E;font-weight:900">${esc(FBMSG)}</p>`:''}<button class="btn" onclick="fbSend()">Göndər</button></section>
-  <h3 style="margin:18px 0 8px;font-size:17px;font-weight:900">Mənim rəylərim (${mine.length})</h3>`+(mine.length?`<div class="tlist">${mine.map(f=>`<div class="titem"><span style="white-space:pre-wrap"><small>${dOnly(f.at)}</small><br>${esc(f.x)}</span></div>`).join('')}</div>`:`<p class="note">Hələ rəy yazmamısınız.</p>`);
-  FBMSG='';window.scrollTo(0,0);
+  <h3 style="margin:18px 0 8px;font-size:17px;font-weight:900">Mənim rəylərim (${mine.length})</h3>`+(mine.length?`<div class="tlist">${mine.map(f=>{const nw=f.rep&&(+f.rat||1)>(+seen[f.id]||0);return `<div class="titem"><span style="white-space:pre-wrap"><small>${dOnly(f.at)}${f.pend?' · ⏳ göndərilir':''}</small><br>${esc(f.x)}</span><button class="tbtn" style="background:var(--bads);color:var(--bad)" onclick="fbHide('${esc(f.id)}')" aria-label="Sil">🗑</button>${f.rep?`<div class="fbrep${nw?' nw':''}"><b>💬 Samir müəllimin cavabı${nw?' · yeni':''}</b><small>${dOnly(f.rat)}</small><p>${esc(f.rep)}</p></div>`:''}</div>`}).join('')}</div><p class="note">🗑 ilə sildiyiniz rəy yalnız sizin siyahınızdan çıxır.</p>`:`<p class="note">Hələ rəy yazmamısınız. Müəllimin cavabı da burada görünəcək.</p>`);
+  FBMSG='';if(!keep)window.scrollTo(0,0);
+  {const m={...seen};(FBS||[]).forEach(f=>{if(f.rep)m[f.id]=+f.rat||1});lsSet('hc14-fbseen',m)}
+  if(!keep)fbSync();
+}
+async function fbHide(id){
+  if(id[0]==='L'){const at=+id.slice(1),hl=lsGet('hc14-fbhid',[]);hl.push(at);lsSet('hc14-fbhid',hl.slice(-200));FB=FB.filter(f=>f.at!==at);lsSet('hc14-fb',FB);return fbHome(true)}
+  const f=(FBS||[]).find(x=>x.id===id);FBS=(FBS||[]).filter(x=>x.id!==id);lsSet('hc14-fbs',FBS);
+  if(f){const hl=lsGet('hc14-fbhid',[]);FB.forEach(g=>{if(Math.abs(g.at-(+f.at||0))<3000&&g.x===f.x)hl.push(g.at)});lsSet('hc14-fbhid',hl.slice(-200))}
+  fbHome(true);
+  try{await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbhide',tel:REG&&REG.tel,id})})}catch(e){}
 }
 function fbSend(){
   const e=document.getElementById('fbx'),x=(e.value||'').trim();
   if(!x){e.focus();e.placeholder='Əvvəlcə rəyinizi yazın…';return}
   const at=Date.now();FB.push({x,at});lsSet('hc14-fb',FB.slice(-100));
-  qPush({a:'fb',...regFields(),x,at});qFlush();
-  FBMSG='✅ Təşəkkür edirik! Rəyiniz göndərildi.';fbHome();
+  qPush({a:'fb',...regFields(),x,at});qFlush();setTimeout(fbSync,2500);
+  FBMSG='✅ Təşəkkür edirik! Rəyiniz göndərildi.';fbHome(true);
 }
-let TFB={rows:null,err:''};
+let TFB={rows:null,err:'',f:'',del:''};
 async function tFb(reload){
   if(!TFB.rows||reload){app.innerHTML=thdr('Rəy və təkliflər','Yüklənir…','tHome()');TFB.err='';
     const key=lsGet('hc14-tkey','');
-    if(!key)TFB.err='Əvvəlcə "Cədvəl açarı"nı daxil edin.';
+    if(!key)TFB.err='Əvvəlcə panelə şifrə ilə daxil olun.';
     else try{const r=await fetch(SHEET_URL+'?a=fbs&key='+encodeURIComponent(key)+'&_='+Date.now());const o=await r.json();
-      if(o.error)TFB.err=o.error==='key'?'Cədvəl açarı səhvdir.':o.error==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Xəta: '+o.error;else TFB.rows=o.rows||[]}
+      if(o.error)TFB.err=o.error==='key'?'Panel açarı səhvdir.':o.error==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Xəta: '+o.error;else TFB.rows=o.rows||[]}
     catch(e){TFB.err='Yükləmək alınmadı. İnterneti yoxlayın.'}}
-  const L=(TFB.rows||[]).slice().sort((a,b)=>(+b.at||0)-(+a.at||0));
-  app.innerHTML=thdr('Rəy və təkliflər',L.length+' rəy','tHome()')+(TFB.err?`<p class="perr">${esc(TFB.err)}</p>`:'')+`<div class="row" style="justify-content:flex-start"><button class="btn" onclick="tFb(true)">↻ Yenilə</button></div><div class="tlist">`+L.map(f=>{const t=esc(f.tel);return `<div class="titem" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b>${esc(f.ad)} ${esc(f.soyad)}</b> <em class="tag">${esc(f.rol||'')}</em><br><small>+994 ${t} · ${dOnly(f.at)}</small><div style="white-space:pre-wrap;margin-top:6px;font-weight:700">${esc(f.x)}</div></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener">💬</a></div>`}).join('')+(L.length?'':'<p class="note">Hələ rəy yoxdur.</p>')+`</div>`;
-  window.scrollTo(0,0);
+  const A=(TFB.rows||[]).slice().sort((a,b)=>(+b.at||0)-(+a.at||0)),F=TFB.f||'',st=f=>f.st||'Yeni';
+  const flt=k=>A.filter(f=>k==='Arxiv'?st(f)==='Arxiv':k?st(f)===k:st(f)!=='Arxiv'),L=flt(F);
+  const y=window.scrollY,same=!!document.getElementById('tfbList');TFB.L=L;
+  let h=thdr('Rəy və təkliflər',A.length+' rəy','tHome()')+(TFB.err?`<p class="perr">${esc(TFB.err)}</p>`:'');
+  h+=`<div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" onclick="tFb(true)">↻ Yenilə</button>${[['','📥 Hamısı'],['Yeni','🆕 Yeni'],['Oxundu','👁 Oxundu'],['Cavablandı','💬 Cavablandı'],['Arxiv','🗄 Arxiv']].map(([k,l])=>`<button class="btn ${F===k?'':'ghost'}" onclick="TFB.f='${k}';tFb()">${l} (${flt(k).length})</button>`).join('')}</div><div class="tlist" id="tfbList">`;
+  h+=L.map((f,i)=>{const t=esc(f.tel),s0=st(f);return `<div class="titem" style="flex-wrap:wrap${s0==='Yeni'?';border-color:var(--bad)':''}"><span style="flex:1 1 220px;min-width:0"><b>${esc(f.ad)} ${esc(f.soyad)}</b> <em class="tag">${esc(f.rol||'')}</em> <em class="tag${s0==='Yeni'?' red':''}">${s0}</em>${f.hid?' <em class="tag">şagird öz tərəfində silib</em>':''}<br><small>+994 ${t} · ${dOnly(f.at)}</small><div style="white-space:pre-wrap;margin-top:6px;font-weight:700">${esc(f.x)}</div></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener">💬</a>
+  <div class="tfbr"><textarea id="rep${i}" rows="2" maxlength="2000" placeholder="Cavabınızı yazın — şagird öz rəyinin altında görəcək…">${esc(f.rep||'')}</textarea>${f.rep?`<small style="color:#1E8E4E;font-weight:800">✓ Cavab göndərilib · ${dOnly(f.rat)}</small>`:''}<div class="row" style="justify-content:flex-start;flex-wrap:wrap;margin:0"><button class="tbtn ok" onclick="tFbAct(${i},'rep')">💬 ${f.rep?'Cavabı yenilə':'Cavab ver'}</button>${s0==='Yeni'?`<button class="tbtn" onclick="tFbAct(${i},'read')">👁 Oxundu</button>`:''}${s0==='Arxiv'?`<button class="tbtn" onclick="tFbAct(${i},'unarc')">↩ Arxivdən çıxar</button>`:`<button class="tbtn" onclick="tFbAct(${i},'arc')">🗄 Arxivə</button>`}${TFB.del===f.id?`<button class="tbtn" style="background:var(--bad);color:#fff" onclick="tFbAct(${i},'del')">Bəli, birdəfəlik sil</button><button class="tbtn" onclick="TFB.del='';tFb()">Ləğv et</button>`:`<button class="tbtn" style="color:var(--bad)" onclick="TFB.del=TFB.L[${i}].id;tFb()">🗑 Sil</button>`}</div></div></div>`}).join('')+(L.length?'':'<p class="note">Bu filtrdə rəy yoxdur.</p>')+`</div>`;
+  app.innerHTML=h;window.scrollTo(0,same?y:0);
+}
+function tFbAct(i,a){const f=(TFB.L||[])[i];if(!f)return;
+  if(a==='rep'){const t=document.getElementById('rep'+i);return tFbSet(f.id,{rep:(t&&t.value||'').trim()})}
+  if(a==='read')return tFbSet(f.id,{st:'Oxundu'});if(a==='arc')return tFbSet(f.id,{st:'Arxiv'});if(a==='unarc')return tFbSet(f.id,{st:f.rep?'Cavablandı':'Oxundu'});if(a==='del')return tFbSet(f.id,{del:1})}
+async function tFbSet(id,body){
+  const key=lsGet('hc14-tkey','');if(!key){tToast('Əvvəlcə panelə daxil olun.');return}
+  const L=TFB.rows||[],f=L.find(x=>x.id===id);if(!f)return;const old={...f};TFB.del='';
+  if(body.del)TFB.rows=L.filter(x=>x.id!==id);else if('rep' in body){f.rep=body.rep;f.st=body.rep?'Cavablandı':'Oxundu';f.rat=body.rep?Date.now():''}else f.st=body.st;
+  tFb();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'fbset',key,id,...body})});const o=await r.json();if(!o.ok)throw new Error(o.error||'x');
+    tToast(body.del?'🗑 Silindi':'rep' in body?(body.rep?'💬 Cavab göndərildi':'Cavab silindi'):body.st==='Arxiv'?'🗄 Arxivə köçürüldü':'✓ '+body.st)}
+  catch(e){if(body.del)TFB.rows=L;else Object.assign(f,old);tFb();tToast('Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
 function tHome(){
   app.innerHTML=thdr('Müəllim paneli','Bölməni seçin','')+(TMSG?`<p class="tmsg">${esc(TMSG)}</p>`:'')+`<div class="tasks">
    <button class="task done" onclick="TU.q='';tUsers()"><span class="ti">👥</span><span class="tt"><b>İstifadəçilər</b><small>Qeydiyyatdan keçənlər · zəng, WhatsApp, blok</small></span></button>
    <button class="task done" onclick="tFb(true)"><span class="ti">✍️</span><span class="tt"><b>Rəy və təkliflər</b><small>Şagird və müəllimlərin yazdıqları</small></span></button>
    <button class="task done" onclick="tNote()"><span class="ti">💡</span><span class="tt"><b>Bilirdinizmi? · Günün qeydi</b><small>${dnOn(DNOTE)?'Hamıda göstərilir ✓':'Hazırda gizlidir — yazın və göstərin'}</small></span></button>
-   <button class="task done" onclick="tKey()"><span class="ti">🔑</span><span class="tt"><b>Cədvəl açarı</b><small>${lsGet('hc14-tkey','')?'Daxil edilib ✓':'Daxil edilməyib'}</small></span></button></div>
+   <button class="task" onclick="tLogout()"><span class="ti">🚪</span><span class="tt"><b>Bu cihazdan çıxış</b><small>Paneli bu cihazda bağla · yenidən girmək üçün şifrə lazım olacaq</small></span></button></div>
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
   window.scrollTo(0,0);
 }
@@ -1924,9 +1992,9 @@ function tKey(){
 async function tFetch(kind){
   const key=lsGet('hc14-tkey','');TU.err='';
   if(!SHEET_URL){TU.err='Google Cədvəl hələ qoşulmayıb.';return}
-  if(!key){TU.err='Əvvəlcə "Cədvəl açarı"nı daxil edin.';return}
+  if(!key){TU.err='Əvvəlcə panelə şifrə ilə daxil olun.';return}
   try{const r=await fetch(SHEET_URL+'?a='+kind+'&key='+encodeURIComponent(key)+'&_='+Date.now());const o=await r.json();
-    if(o.error)TU.err=o.error==='key'?'Cədvəl açarı səhvdir.':'Xəta: '+o.error;else TU[kind==='users'?'list':'res']=o.rows||[];
+    if(o.error)TU.err=o.error==='key'?'Panel açarı səhvdir — çıxış edib yenidən daxil olun.':'Xəta: '+o.error;else TU[kind==='users'?'list':'res']=o.rows||[];
   }catch(e){TU.err='Məlumatı yükləmək alınmadı. İnterneti yoxlayın.'}
 }
 const dOnly=t=>{if(!t)return '';const d=new Date(+t||t);return isNaN(d)?String(t):`${z2(d.getDate())}.${z2(d.getMonth()+1)}.${d.getFullYear()} ${z2(d.getHours())}:${z2(d.getMinutes())}`};
@@ -1941,7 +2009,7 @@ const AB_FROM=1793390400000,abTag=u=>{if(u.blok)return u.ab==='avto'?'🤖 avtom
 async function tUsers(reload){
   const same=!!document.getElementById('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same)app.innerHTML=thdr('İstifadəçilər','Yüklənir…','tHome()');else tToast('Yenilənir…');await tFetch('users')}
-  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q.toLowerCase();
+  const L=TU.list||[];const RL=L.filter(u=>!TU.r||u.rol===TU.r),cR=r=>L.filter(u=>u.rol===r).length;const now=Date.now(),day=864e5,q=TU.q;
   const bl=L.filter(u=>u.blok).length,td=L.filter(u=>now-(+u.son||0)<day).length,wk=L.filter(u=>now-(+u.son||0)<7*day).length;
   const roles=[...new Set(L.map(u=>u.rol).filter(Boolean))];
   let h=thdr('İstifadəçilər',L.length+' nəfər','tHome()');
@@ -1950,24 +2018,48 @@ async function tUsers(reload){
   const fb=(on,js,lab)=>`<button class="btn ${on?'':'ghost'}" onclick="${js}">${lab}</button>`;
   h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+cR('Müəllim')+')'],['Tələbə','🎓 Tələbələr ('+cR('Tələbə')+')']].map(([f,l])=>fb(TU.r===f,`TU.r='${f}';TU.f='Yeni';tUsers()`,l)).join('')}</div>`;
   if(TU.r)h+=`<div class="row" style="justify-content:flex-start;align-items:center"><b>${TU.r==='Müəllim'?'Müəllimlər':'Tələbələr'}:</b>${[['Yeni','🆕 Yeni qoşulanlar ('+RL.filter(isNew).length+')'],['Pay','💳 Ödəniş edənlər ('+RL.filter(isPay).length+')'],['Blok','🚫 Bloklananlar ('+RL.filter(u=>u.blok).length+')']].map(([f,l])=>fb(TU.f===f,`TU.f='${f}';tUsers()`,l)).join('')}</div>`;
+  h+=waTplHTML(L.filter(u=>u.blok).length);
   h+=tSearch('tUsers','Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…');
   const okF=u=>!TU.r||!TU.f||(TU.f==='Blok'?u.blok:TU.f==='Yeni'?isNew(u):TU.f==='Pay'?isPay(u):true);
   const rows=L.filter(u=>q.trim()?uHit(u,q):((!TU.r||u.rol===TU.r)&&okF(u))).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<div id="tuRes"><p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.ad)} ${esc(u.soyad)}</b> <em class="tag">${esc(u.rol||'')}</em>${u.yas?` <em class="tag">🎂 ${esc(u.yas)} yaş</em>`:''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${abTag(u)?` <em class="tag">${abTag(u)}</em>`:''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${telHL(u.tel,q)}</small><br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small></span><a class="tbtn" href="tel:+994${t}">📞</a><a class="tbtn ok" href="https://wa.me/994${t}" target="_blank" rel="noopener" onclick="tWa('${t}')">💬</a><button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
+  h+=`<div id="tuRes"><p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.nm||(u.ad+' '+u.soyad))}</b> <em class="tag">${esc(u.rol||'')}</em>${u.yas?` <em class="tag">🎂 ${esc(u.yas)} yaş</em>`:''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.blok&&waSent(u.tel)?` <em class="tag" style="background:#1E8E4E;color:#fff">✅ Mesaj göndərilib · ${dOnly(waSent(u.tel)).slice(0,10)}</em>`:''}${abTag(u)?` <em class="tag">${abTag(u)}</em>`:''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${u.tel2?telHL(u.tel2,q):telHL(u.tel,q)}</small>${u.nm||u.tel2?`<br><small>✏️ düzəldilib · qeydiyyatda: ${esc(u.ad)} ${esc(u.soyad)} · +994 ${esc(u.tel)}</small>`:''}<br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small>${TU.ren===u.tel?`<div class="tren"><label>Ad<input id="ra-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ')[0])}"></label><label>Soyad<input id="rs-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ').slice(1).join(' '))}"></label><label>Nömrə (+994-dən sonra)<input id="rt-${t}" inputmode="tel" value="${esc(u.tel2||u.tel)}"></label><div class="row" style="justify-content:flex-start;margin:0"><button class="tbtn ok" onclick="tRen('${t}')">Yadda saxla</button>${u.nm||u.tel2?`<button class="tbtn" onclick="tRen('${t}',1)">Qeydiyyatdakına qaytar</button>`:''}<button class="tbtn" onclick="TU.ren='';tUsers()">Ləğv et</button></div><small>Şagirdin girişi dəyişmir — düzəliş yalnız sizin paneldə görünür.</small></div>`:''}</span><button class="tbtn" title="Düzəlt" onclick="TU.ren=TU.ren==='${t}'?'':'${t}';tUsers()">✏️</button><a class="tbtn" href="tel:+994${esc(u.tel2||u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel2||u.tel)}${u.blok&&waTpl()?'?text='+encodeURIComponent(waTxt(u)):''}" target="_blank" rel="noopener" onclick="${u.blok&&waTpl()?`waMark('${t}',1)`:`tWa('${t}')`}">💬${u.blok&&waTpl()?'📝':''}</a>${u.blok?`<button class="tbtn${waSent(u.tel)?' ok':''}" onclick="waMark('${t}')">${waSent(u.tel)?'✅ Göndərilib':'☐ Göndərildi'}</button>`:''}<button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
   if(window._tqKeep&&document.getElementById('tuRes')){window._tqKeep=0;const T=document.createElement('div');T.innerHTML=h;document.getElementById('tuRes').innerHTML=T.querySelector('#tuRes').innerHTML;return}window._tqKeep=0;app.innerHTML=h;window.scrollTo(0,same?y:0);
 }
 /* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
 function tWa(tel){} /* WhatsApp düyməsi heç nəyi avtomatik dəyişmir */
+/* ✏️ müəllimin düzəltdiyi ad və nömrə (şagirdin girişi dəyişmir) */
+async function tRen(tel,reset){
+  const key=lsGet('hc14-tkey','');if(!key){tToast('Əvvəlcə panelə daxil olun.');return}
+  const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(!u)return;
+  const val=id=>((document.getElementById(id+'-'+tel)||{}).value||'').trim().replace(/\s+/g,' ');
+  let nm='',t2='';
+  if(!reset){if(!val('ra')){tToast('Ad boş ola bilməz.');return}nm=(val('ra')+' '+val('rs')).trim();t2=normTel(val('rt'));
+    if(t2&&t2.length!==9){tToast('Nömrə 9 rəqəm olmalıdır (məs: 55 123 45 67).');return}
+    if(nm===(u.ad+' '+u.soyad).trim())nm='';if(t2===String(u.tel))t2=''}
+  const old=[u.nm||'',u.tel2||''];u.nm=nm;u.tel2=t2;TU.ren='';tUsers();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'ren',key,tel,v:nm,t2})});const o=await r.json();if(!o.ok)throw new Error(o.error||'x');tToast(reset?'Qeydiyyatdakı ad və nömrə qaytarıldı':'✏️ Düzəldildi')}
+  catch(x){[u.nm,u.tel2]=old;tUsers();tToast('Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
+}
+/* 📝 bloklananlar üçün WhatsApp şablonu + ✅ göndərildi işarəsi (bu cihazda). {ad} = adı */
+const waTpl=()=>lsGet('hc14-watpl','');
+const waTxt=u=>waTpl().replace(/\{ad\}/g,String((u.nm||u.ad||'')).split(' ')[0]);
+const waSent=tel=>lsGet('hc14-wasent',{})[tel]||0;
+function waMark(tel,auto){const m=lsGet('hc14-wasent',{});if(auto)m[tel]=Date.now();else if(m[tel])delete m[tel];else m[tel]=Date.now();lsSet('hc14-wasent',m);setTimeout(()=>{window._tqKeep=0;tUsers()},auto?400:0)}
+function waTplHTML(n){const t=waTpl(),k=Object.keys(lsGet('hc14-wasent',{})).length;return `<details class="watpl"${TU.tpl?' open':''}><summary>📝 Bloklananlar üçün WhatsApp şablonu ${t?'<em>✓ hazırdır</em>':'<em class="no">yazılmayıb</em>'} <small>· ${n} bloklanan</small></summary>
+  <p>Bura mesajı yazın. Bloklanmış istifadəçinin yanındakı <b>💬📝</b> düyməsini basanda WhatsApp bu mesajla açılacaq — yalnız "Göndər" basın. <b>{ad}</b> yazsanız, yerinə həmin şəxsin adı düşəcək.</p>
+  <textarea id="watpl" rows="5" placeholder="Məs: Salam, {ad}! English 1–4-də hesabınız bloklanıb. Davam etmək üçün…">${esc(t)}</textarea>
+  <div class="row" style="justify-content:flex-start;margin:0 12px 8px"><button class="tbtn ok" onclick="waTplSave()">💾 Yadda saxla</button>${t?'<button class="tbtn" onclick="waTplSave(1)">🗑 Şablonu sil</button>':''}</div><small>Şablon və ✅ işarələri bu cihazda saxlanılır. Mesaj göndərilənlər: <b>${k}</b>${k?' · <a href="#" onclick="event.preventDefault();lsSet(\'hc14-wasent\',{});tToast(\'İşarələr təmizləndi\');tUsers()">işarələri təmizlə (yeni göndəriş)</a>':''}</small></details>`}
+function waTplSave(del){const v=del?'':String((document.getElementById('watpl')||{}).value||'').trim();lsSet('hc14-watpl',v);TU.tpl=!v;tToast(v?'💾 Şablon yadda saxlandı':'Şablon silindi');tUsers()}
 async function tSet(a,tel,v){
   const key=lsGet('hc14-tkey','');
-  if(!key){tToast('Əvvəlcə "Cədvəl açarı"nı daxil edin.');return}
+  if(!key){tToast('Əvvəlcə panelə şifrə ilə daxil olun.');return}
   const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(!u)return;
   const F=a==='block'?'blok':'elaqe',old=u[F];
   u[F]=a==='elaqe'?(v?Date.now():''):v;tUsers();
   try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a,key,tel,v})});const o=await r.json();
     if(!o.ok)throw new Error(o.error||'x');if(a==='elaqe'&&v&&o.t)u.elaqe=o.t;
     tToast(a==='block'?(v?'🚫 Bloklandı':'✅ Blok açıldı'):(v?'💳 Ödəniş edənlərə əlavə olundu':'Ödəniş işarəsi götürüldü'));
-  }catch(e){u[F]=old;tUsers();const m=String(e&&e.message);tToast(m==='key'?'Cədvəl açarı səhvdir.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
+  }catch(e){u[F]=old;tUsers();const m=String(e&&e.message);tToast(m==='key'?'Panel açarı səhvdir — çıxış edib yenidən daxil olun.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
 async function tResults(reload){
   if(!TU.res||reload){app.innerHTML=thdr('Nəticələr','Yüklənir…','tHome()');await tFetch('results')}
@@ -2016,19 +2108,20 @@ function dnBind(){const g=id=>document.getElementById(id),T=g('dn_t'),X2=g('dn_x
   T.oninput=pv;X2.oninput=pv;O.onchange=pv;pv();
   const save=async n=>{M.textContent='Saxlanılır…';
     try{await DN_SET(n);DNOTE=n;dnKeep(n);dnPaint();M.textContent=dnOn(n)?'✅ Saxlanıldı — hamının ekranında görünür.':'✅ Qeyd gizlədildi.'}
-    catch(e){const m=String(e&&e.message);M.textContent=m==='nokey'?'Əvvəlcə "Cədvəl açarı"nı daxil edin.':m==='key'?'Cədvəl açarı səhvdir.':m==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Saxlamaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.'}};
+    catch(e){const m=String(e&&e.message);M.textContent=m==='nokey'?'Əvvəlcə panelə şifrə ilə daxil olun.':m==='key'?'Panel açarı səhvdir — çıxış edib yenidən daxil olun.':m==='a'?'Google Cədvəlin skriptini yeniləyin (yeni Kod.gs).':'Saxlamaq alınmadı. İnterneti yoxlayıb yenidən cəhd edin.'}};
   g('dn_save').onclick=()=>{const n=cur();if(!n.x){M.textContent='Mətn boşdur.';return}n.on=true;O.checked=true;save(n)};
   g('dn_hide').onclick=()=>{O.checked=false;pv();save(cur())};
 }
 /* 🔎 istifadəçi axtarışı: ad/soyad və ya nömrənin istənilən hissəsi (boşluq, 0, +994 fərq etmir) */
 const telD=x=>String(x||'').replace(/\D/g,'');
 const qTel=q=>{let d=telD(q);if(d.length>9&&d.startsWith('994'))d=d.slice(3);if(d.length===10&&d[0]==='0')d=d.slice(1);return d};
-const lc=s=>String(s||'').toLocaleLowerCase('az');
+/* axtarış hərfə həssas deyil: Ə=E=A, I=İ=ı, Ş=S, Ç=C, Ğ=G, Ö=O, Ü=U */
+const lc=s=>String(s||'').toLocaleLowerCase('az').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ö/g,'o').replace(/ü/g,'u').replace(/a/g,'e');
 function telSpan(t,q){const d=telD(q);if(!d)return [-1,-1];const a=qTel(q);let i=t.indexOf(a);if(a&&i>=0)return [i,i+a.length];
   i=('0'+t).indexOf(d);if(i>=0)return [Math.max(0,i-1),i-1+d.length];i=('994'+t).indexOf(d);if(i>=0)return [Math.max(0,i-3),i-3+d.length];return [-1,-1]}
 function uHit(u,q){q=lc(q).trim();if(!q)return true;const t=telD(u.tel);
-  if(telD(q)&&telSpan(t,q)[0]<0)return false;
-  const words=q.replace(/[\d+()\-.]/g,' ').split(/\s+/).filter(Boolean),nm=lc([u.ad,u.soyad,u.rol,u.sayt].join(' '));
+  if(telD(q)&&telSpan(t,q)[0]<0&&!(u.tel2&&telSpan(telD(u.tel2),q)[0]>=0))return false;
+  const words=q.replace(/[\d+()\-.]/g,' ').split(/\s+/).filter(Boolean),nm=lc([u.ad,u.soyad,u.rol,u.sayt,u.nm].join(' '));
   return words.every(w=>nm.includes(w))}
 function telHL(tel,q){const t=telD(tel),[s,e]=telSpan(t,q||''),G=t.length===9?[2,5,7]:[];let h='',on=false;
   [...t].forEach((c,j)=>{const m=j>=s&&j<e;if(G.includes(j)){if(on){h+='</mark>';on=false}h+=' '}if(m&&!on){h+='<mark class="thl">';on=true}if(!m&&on){h+='</mark>';on=false}h+=c});
@@ -2068,10 +2161,28 @@ mark.thl{background:#FFE14D;color:#1a1a1a;border-radius:4px;padding:0 1px;font-w
 `;document.head.appendChild(s)})();
 
 /* ---------- boot ---------- */
+/* 📱 qeydiyyatda müəllimin nömrəsini yazan öz nömrəsini yazır */
+let TFERR='';
+function telFix(){
+  app.innerHTML=`<section class="regbox"><h2>📱 Öz nömrənizi yazın</h2><p class="note" style="font-size:15px"><b>${esc((REG.ad||'')+' '+(REG.soyad||''))}</b>, qeydiyyatda <b>Samir müəllimin nömrəsini</b> yazmısınız. Müəllim sizi tanısın deyə öz telefon nömrənizi yazın. Nəticələriniz itməyəcək.</p><div class="pf"><label>Sizin telefon nömrəniz<div class="tel"><span>+994</span><input id="tf_tel" inputmode="numeric" maxlength="12" placeholder="55 123 45 67"></div></label><p class="perr">${esc(TFERR)}</p><button class="btn sendbtn" id="tfok" type="button">Yadda saxla və davam et →</button></div></section>`;
+  TFERR='';$('#tf_tel').oninput=e=>regTel(e.target);
+  $('#tfok').onclick=()=>{const tel=normTel($('#tf_tel').value||'');if(!telOK(tel)){TFERR='Telefon nömrəsi düzgün deyil. Nümunə: 55 123 45 67';return telFix()}if(tel===SAMIR_TEL){TFERR='Bu, Samir müəllimin nömrəsidir. Öz nömrənizi yazın.';return telFix()}
+    REG={...REG,tel,at:Date.now()};lsSet('hc14-reg',REG);lsSet('hc14-blok',0);lsSet('hc14-fbs',null);FBS=null;boot()};
+}
+/* 👤 istifadəçi öz adını və soyadını düzəldir (nömrə hesabın açarıdır, dəyişmir) */
+let MEERR='';
+function meEdit(){
+  const r=REG||{};
+  app.innerHTML=`<nav class="crumbs"><button class="homeb" data-go='{"p":"home"}'>🏠 Ana menyu</button></nav><section class="regbox"><h2>👤 Mənim adım</h2><p class="note" style="font-size:15px">Adını səhv yazmısansa, burada düzəlt. Müəllim səni bu adla görəcək.</p><div class="pf"><label>Ad<input id="me_ad" value="${esc(r.ad||'')}" autocomplete="off"></label><label>Soyad<input id="me_soyad" value="${esc(r.soyad||'')}" autocomplete="off"></label><p class="note">📱 Nömrə: <b>${esc(fmtTel(String(r.tel||'')))}</b><br><small>Nömrə səhvdirsə, Samir müəllimə WhatsApp-da yaz — o düzəldəcək.</small></p><p class="perr">${esc(MEERR)}</p><button class="btn sendbtn" id="meok" type="button">Yadda saxla</button></div></section>`;
+  MEERR='';window.scrollTo(0,0);
+  $('#meok').onclick=()=>{const cl=id=>String((document.getElementById(id)||{}).value||'').trim().replace(/\s+/g,' ');const ad=cl('me_ad'),soyad=cl('me_soyad');if(!ad||!soyad){MEERR='Ad və soyadı yaz.';return meEdit()}
+    REG={...REG,ad,soyad};lsSet('hc14-reg',REG);LASTPING=0;syncPing();go({p:'home'});tToast('✅ Adın yadda saxlandı')};
+}
 function boot(){
   if(!REG){regScreen();return}
+  if(String(REG.tel)===SAMIR_TEL&&!lsGet('hc14-tkey','')){telFix();return}
   if(lsGet('hc14-blok',0)){blockScreen();syncPing();return}
-  render();LASTPING=Date.now();syncPing();dnPull();
+  render();LASTPING=Date.now();syncPing();dnPull();setTimeout(fbSync,1500);
 }
 boot();
 </script>
