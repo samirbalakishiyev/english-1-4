@@ -2020,7 +2020,7 @@ function tToast(m){let t=document.getElementById('ttoast');if(!t){t=document.cre
 const PAY_FROM=1792436545878;
 const isPaid=u=>(+u.elaqe||0)>=PAY_FROM, isPay=u=>isPaid(u)&&!u.blok, isNew=u=>!u.blok&&!isPaid(u);
 /* ⏳ avto-blok məlumatı (server qaydası: 31.10.2026-dan sonra qoşulan müəllim və 25+ yaşlılar, ödənişsiz → 3 gündən sonra blok) */
-const AB_FROM=1793390400000,abTag=u=>{if(u.blok)return u.ab==='avto'?'🤖 avtomatik bloklanıb (3 gün bitdi)':'';if(isPaid(u)||!u.qeyd||+u.qeyd<AB_FROM||u.ab==='istisna')return '';if(!/müəllim/i.test(u.rol||'')&&!(+u.yas>25))return '';const d=Math.ceil((+u.qeyd+3*864e5-Date.now())/864e5);return d>0?`⏳ pulsuz: ${d} gün qalıb`:'⏳ növbəti girişdə bloklanacaq'};
+const AB_FROM=1793390400000,abTag=u=>{if(u.blok)return u.ab==='avto'?'🤖 avtomatik bloklanıb (3 gün bitdi)':'';if(isPaid(u)||!u.qeyd||+u.qeyd<AB_FROM||u.ab==='istisna')return '';if(+u.qeyd<1793637600000&&!/müəllim/i.test(u.rol||'')&&!(+u.yas>25))return '';const d=Math.ceil((+u.qeyd+3*864e5-Date.now())/864e5);return d>0?`⏳ pulsuz: ${d} gün qalıb`:'⏳ növbəti girişdə bloklanacaq'};
 async function tUsers(reload){
   const same=!!document.getElementById('tuList'),y=window.scrollY;
   if(!TU.list||reload){if(!same)app.innerHTML=thdr('İstifadəçilər','Yüklənir…','tHome()');else tToast('Yenilənir…');await tFetch('users')}
@@ -2072,7 +2072,7 @@ async function tSet(a,tel,v){
   const F=a==='block'?'blok':'elaqe',old=u[F];
   u[F]=a==='elaqe'?(v?Date.now():''):v;tUsers();
   try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a,key,tel,v})});const o=await r.json();
-    if(!o.ok)throw new Error(o.error||'x');if(a==='elaqe'&&v&&o.t)u.elaqe=o.t;
+    if(!o.ok)throw new Error(o.error||'x');if(a==='elaqe'&&v&&o.t)u.elaqe=o.t;if(a==='elaqe'&&o.unb){u.blok=false;u.ab='';tUsers();}
     tToast(a==='block'?(v?'🚫 Bloklandı':'✅ Blok açıldı'):(v?'💳 Ödəniş edənlərə əlavə olundu':'Ödəniş işarəsi götürüldü'));
   }catch(e){u[F]=old;tUsers();const m=String(e&&e.message);tToast(m==='key'?'Panel açarı səhvdir — çıxış edib yenidən daxil olun.':'Alınmadı. Google Cədvəlin skriptini yeniləmisiniz?')}
 }
