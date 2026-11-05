@@ -29,6 +29,8 @@
 .watpl{margin:0 0 10px;border:2px solid #25D366;border-radius:14px;background:#fff;overflow:hidden}.watpl>summary{cursor:pointer;padding:10px 12px;font-weight:900;color:#128C4A;list-style:none}.watpl>summary::-webkit-details-marker{display:none}.watpl>summary em{font-style:normal;font-size:12px;background:#25D366;color:#fff;border-radius:999px;padding:2px 8px;margin-left:4px}.watpl>summary em.no{background:#E2E8F0;color:#5B6B80}.watpl>summary small{color:#5B6B80;font-weight:700}.watpl>p,.watpl>small{margin:0 12px 8px;display:block}.watpl>p{font-size:13.5px;font-weight:600}.watpl textarea{display:block;width:calc(100% - 24px);margin:0 12px 8px;box-sizing:border-box;font:inherit;font-size:15px;font-weight:600;padding:10px;border:2px solid #D5DBE8;border-radius:12px;resize:vertical}
 .mechip{display:inline-block;margin:6px 0 2px;padding:5px 12px;border-radius:999px;border:1.5px solid #0E7C86;background:#E0F4F5;color:#0E5F66;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
 .restile{display:flex!important;width:100%;align-items:center;gap:10px;justify-content:flex-start!important;background:#E8F6EC!important;color:#1E6B3D!important;border:2.5px solid #2E9E55!important;margin:0 0 10px!important;box-shadow:0 5px 0 #2E9E55!important}
+.st5{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:0 0 10px}.st5 button{border:2px solid var(--line);background:var(--card,#fff);color:inherit;border-radius:14px;padding:9px 6px;text-align:center;font:inherit;cursor:pointer}.st5 button small{display:block;font-size:12.5px;font-weight:800;opacity:.8}.st5 button b{display:block;font-size:24px;font-weight:900}.st5 button.on{border-color:#1F6FEB;box-shadow:0 0 0 2px #1F6FEB33}
+.njbtn{display:flex;align-items:center;gap:8px;width:100%;border:2.5px solid #1E8E4E;background:#E3F7EA;color:#0F5A2E;border-radius:14px;padding:12px 14px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;margin:0 0 10px}.njbtn b{background:#1E8E4E;color:#fff;border-radius:999px;padding:1px 10px}.njbtn small{margin-left:auto;font-weight:700;opacity:.75}.njbtn.on{background:#1E8E4E;color:#fff}.njbtn.on b{background:#fff;color:#1E8E4E}
 </style>
 </head><body>
 <title>English 1–4</title>
@@ -1999,7 +2001,7 @@ function tHome(){
    <p class="note" style="font-size:14px">${SHEET_URL?'Google Cədvəl qoşulub ✓':'Google Cədvəl hələ qoşulmayıb: istifadəçilər, blok və nəticələr cədvəl qoşulandan sonra görünəcək.'}</p>`;
   window.scrollTo(0,0);
 }
-let TU={list:null,res:null,q:'',f:'',r:'',err:'',msg:''};
+let TU={list:null,res:null,q:'',f:'Yeni',r:'',err:'',msg:''};
 function tKey(){
   app.innerHTML=thdr('Cədvəl açarı','Bir dəfə daxil edin','tHome()')+`<form class="tlogin" onsubmit="event.preventDefault();lsSet('hc14-tkey',$('#tk').value.trim());TU={list:null,res:null,q:'',f:'Yeni',r:'',err:'',ask:'',msg:''};TMSG='Açar yadda saxlandı.';tHome()"><input id="tk" type="password" autocomplete="off" placeholder="Açar" value="${esc(lsGet('hc14-tkey',''))}"><button class="btn" type="submit">Yadda saxla</button></form><p class="note" style="font-size:14px">Açar Google Cədvəlin skriptindədir (KEY). Şagirdlərə verməyin.</p>`;
   window.scrollTo(0,0);
@@ -2030,9 +2032,9 @@ async function tUsers(reload){
   const roles=[...new Set(L.map(u=>u.rol).filter(Boolean))];
   let h=thdr('İstifadəçilər',L.length+' nəfər','tHome()');
   if(TU.err)h+=`<p class="perr">${esc(TU.err)}</p>`;
-  h+=`<div class="statrow">${[['Cəmi',L.length],...roles.map(r=>[r,L.filter(u=>u.rol===r).length]),['Bu gün',td],['Bu həftə',wk],['Bloklanıb',bl],['🆕 Yeni',L.filter(isNew).length],['💳 Ödəniş edib',L.filter(isPay).length]].map(([a,b])=>`<div><small>${esc(a)}</small><b>${b}</b></div>`).join('')}</div>`;
+  h+=`<div class="st5">${[['','👥 Ümumi',L.length],['Müəllim','👩‍🏫 Müəllimlər',L.filter(u=>u.rol==='Müəllim').length],['Tələbə','🎓 Tələbələr',L.filter(u=>u.rol!=='Müəllim').length],['Blok','🚫 Bloklananlar',L.filter(u=>u.blok).length],['Pay','💳 Ödəniş edənlər',L.filter(isPaid).length]].map(([f,a,n])=>`<button type="button" class="${TU.f===f?'on':''}" onclick="TU.f='${f}';tUsers()"><small>${a}</small><b>${n}</b></button>`).join('')}</div>`;
   const fb=(on,js,lab)=>`<button class="btn ${on?'':'ghost'}" onclick="${js}">${lab}</button>`;
-  h+=`<div class="row" style="justify-content:flex-start;align-items:center"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button><b>Göstər:</b>${[['','👥 Hamısı ('+L.length+')'],['Müəllim','👩‍🏫 Müəllimlər ('+L.filter(u=>u.rol==='Müəllim').length+')'],['Tələbə','🎓 Şagirdlər ('+L.filter(u=>u.rol!=='Müəllim').length+')'],['Blok','🚫 Bloklananlar ('+L.filter(u=>u.blok).length+')'],['Pay','💳 Ödəniş edənlər ('+L.filter(isPaid).length+')'],['Yeni','🆕 Yeni qoşulanlar ('+L.filter(isJ).length+')']].map(([f,l])=>fb(TU.f===f,`TU.r='';TU.f='${f}';tUsers()`,l)).join('')}</div>`;
+  h+=`${(()=>{const n=L.filter(isJ).length,on=TU.f==='Yeni';return `<button type="button" class="njbtn${on?' on':''}" onclick="TU.f='Yeni';tUsers()">🆕 Yeni qoşulanlar <b>${n}</b><small>son 3 gündə</small></button>`})()}<div class="row" style="justify-content:flex-start"><button class="btn" onclick="tUsers(true)">↻ Yenilə</button></div>`;
   h+=waTplHTML(L.filter(u=>u.blok).length);
   h+=tSearch('tUsers','Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…');
   const okF=u=>!TU.f||(TU.f==='Müəllim'?u.rol==='Müəllim':TU.f==='Tələbə'?u.rol!=='Müəllim':TU.f==='Blok'?u.blok:TU.f==='Pay'?isPaid(u):TU.f==='Yeni'?isJ(u):true);
