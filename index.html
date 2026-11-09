@@ -31,6 +31,10 @@
 .restile{display:flex!important;width:100%;align-items:center;gap:10px;justify-content:flex-start!important;background:#E8F6EC!important;color:#1E6B3D!important;border:2.5px solid #2E9E55!important;margin:0 0 10px!important;box-shadow:0 5px 0 #2E9E55!important}
 .st5{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:0 0 10px}.st5 button{border:2px solid var(--line);background:var(--card,#fff);color:inherit;border-radius:14px;padding:9px 6px;text-align:center;font:inherit;cursor:pointer}.st5 button small{display:block;font-size:12.5px;font-weight:800;opacity:.8}.st5 button b{display:block;font-size:24px;font-weight:900}.st5 button.on{border-color:#1F6FEB;box-shadow:0 0 0 2px #1F6FEB33}
 .njbtn{display:flex;align-items:center;gap:8px;width:100%;border:2.5px solid #1E8E4E;background:#E3F7EA;color:#0F5A2E;border-radius:14px;padding:12px 14px;font:inherit;font-weight:900;font-size:17px;cursor:pointer;margin:0 0 10px}.njbtn b{background:#1E8E4E;color:#fff;border-radius:999px;padding:1px 10px}.njbtn small{margin-left:auto;font-weight:700;opacity:.75}.njbtn.on{background:#1E8E4E;color:#fff}.njbtn.on b{background:#fff;color:#1E8E4E}
+#sbTag{display:block;width:calc(100% - 32px);max-width:640px;margin:10px auto 2px;box-sizing:border-box;text-align:center;padding:9px 14px;border-radius:14px;background:linear-gradient(135deg,#FFF6DD,#FFE3BC);border:1.5px solid #F0B44C;color:#7A4A00;font-weight:800;font-size:15.5px;line-height:1.35;letter-spacing:.1px;box-shadow:0 8px 18px -14px rgba(160,100,0,.7);position:relative;z-index:5}
+#sbTag b{font-weight:900}
+.ckb{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;margin:0 2px 0 6px;padding:0 7px;border-radius:9px;border:1.5px solid #E0A93A;background:#fff;color:#A06A00;font:inherit;font-size:12px;font-weight:900;letter-spacing:.5px;cursor:pointer;vertical-align:middle}
+.ckb.on{background:#F5A524;border-color:#C98208;color:#fff;box-shadow:0 0 0 3px rgba(245,165,36,.25)}
 </style>
 </head><body>
 <title>English 1–4</title>
@@ -1811,7 +1815,7 @@ async function qFlush(){
     while(q.length){const o=q[0];
       const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(o)});
       if(!r.ok)break;q=lsGet('hc14-q',[]);q.shift();lsSet('hc14-q',q);
-      if(o.a==='ping'){let j=null;try{j=await r.json()}catch(e){}if(j&&j.gone){goneReset();break}blokSet(j&&j.blok)}}
+      if(o.a==='ping'){let j=null;try{j=await r.json()}catch(e){}if(j&&j.gone){goneReset();break}blokSet(j&&j.blok);if(j&&j.ok&&'tg' in j)tagShow(j.tg)}}
   }catch(e){}FLUSHING=false;
 }
 /* 🗑 istifadəçini sil: iki dəfə basılır; nömrə bütün cədvəldən silinir, o adam yenidən açsa qeydiyyat ekranını görür */
@@ -2039,7 +2043,7 @@ async function tUsers(reload){
   h+=tSearch('tUsers','Axtar: ad, soyad və ya nömrənin istənilən hissəsi (məs: 795 86)…');
   const okF=u=>!TU.f||(TU.f==='Müəllim'?u.rol==='Müəllim':TU.f==='Tələbə'?u.rol!=='Müəllim':TU.f==='Blok'?u.blok:TU.f==='Pay'?isPaid(u):TU.f==='Yeni'?isJ(u):true);
   const rows=L.filter(u=>q.trim()?uHit(u,q):okF(u)).sort((a,b)=>(+b.son||0)-(+a.son||0));
-  h+=`<div id="tuRes"><p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.nm||(u.ad+' '+u.soyad))}</b> <em class="tag">${esc(u.rol||'')}</em>${u.yas?` <em class="tag">🎂 ${esc(u.yas)} yaş</em>`:''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.blok&&waSent(u.tel)?` <em class="tag" style="background:#1E8E4E;color:#fff">✅ Mesaj göndərilib · ${dOnly(waSent(u.tel)).slice(0,10)}</em>`:''}${abTag(u)?` <em class="tag">${abTag(u)}</em>`:''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${u.tel2?telHL(u.tel2,q):telHL(u.tel,q)}</small>${u.nm||u.tel2?`<br><small>✏️ düzəldilib · qeydiyyatda: ${esc(u.ad)} ${esc(u.soyad)} · +994 ${esc(u.tel)}</small>`:''}<br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small>${TU.ren===u.tel?`<div class="tren"><label>Ad<input id="ra-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ')[0])}"></label><label>Soyad<input id="rs-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ').slice(1).join(' '))}"></label><label>Nömrə (+994-dən sonra)<input id="rt-${t}" inputmode="tel" value="${esc(u.tel2||u.tel)}"></label><div class="row" style="justify-content:flex-start;margin:0"><button class="tbtn ok" onclick="tRen('${t}')">Yadda saxla</button>${u.nm||u.tel2?`<button class="tbtn" onclick="tRen('${t}',1)">Qeydiyyatdakına qaytar</button>`:''}<button class="tbtn" onclick="TU.ren='';tUsers()">Ləğv et</button></div><small>Şagirdin girişi dəyişmir — düzəliş yalnız sizin paneldə görünür.</small></div>`:''}</span><button class="tbtn" title="Düzəlt" onclick="TU.ren=TU.ren==='${t}'?'':'${t}';tUsers()">✏️</button><a class="tbtn" href="tel:+994${esc(u.tel2||u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel2||u.tel)}${u.blok&&waTpl()?'?text='+encodeURIComponent(waTxt(u)):''}" target="_blank" rel="noopener" onclick="${u.blok&&waTpl()?`waMark('${t}',1)`:`tWa('${t}')`}">💬${u.blok&&waTpl()?'📝':''}</a>${u.blok?`<button class="tbtn${waSent(u.tel)?' ok':''}" onclick="waMark('${t}')">${waSent(u.tel)?'✅ Göndərilib':'☐ Göndərildi'}</button>`:''}<button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button><button class="tbtn rm" onclick="tDel('${t}',this)">🗑 Sil</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
+  h+=`<div id="tuRes"><p class="note" style="margin:0 0 8px;font-weight:800">Göstərilir: ${rows.length}${q.trim()?' · 🔎 bütün istifadəçilər arasında axtarılır':''}</p><div class="tlist" id="tuList">`+rows.map(u=>{const t=esc(u.tel);return `<div class="titem${u.blok?' blk':''}" style="flex-wrap:wrap"><span style="flex:1 1 220px;min-width:0"><b${isPaid(u)?' style="color:#1E8E4E"':''}>${isPaid(u)?'💳 ':''}${esc(u.nm||(u.ad+' '+u.soyad))}</b><button type="button" class="ckb${u.tg==='CK'?' on':''}" data-ck="${t}" title="Ceyhun müəllimin şagirdi">CK</button> <em class="tag">${esc(u.rol||'')}</em>${u.yas?` <em class="tag">🎂 ${esc(u.yas)} yaş</em>`:''}${u.blok?' <em class="tag red">🚫 Bloklanıb</em>':''}${u.blok&&waSent(u.tel)?` <em class="tag" style="background:#1E8E4E;color:#fff">✅ Mesaj göndərilib · ${dOnly(waSent(u.tel)).slice(0,10)}</em>`:''}${abTag(u)?` <em class="tag">${abTag(u)}</em>`:''}${isPaid(u)?` <em class="tag" style="background:#1E8E4E;color:#fff;border-color:#1E8E4E">💳 Ödəniş edib · ${dOnly(u.elaqe)}</em>`:''}${u.sayt?` <em class="tag">${esc(u.sayt)}</em>`:''}<br><small>+994 ${u.tel2?telHL(u.tel2,q):telHL(u.tel,q)}</small>${u.nm||u.tel2?`<br><small>✏️ düzəldilib · qeydiyyatda: ${esc(u.ad)} ${esc(u.soyad)} · +994 ${esc(u.tel)}</small>`:''}<br><small>Qeydiyyat: ${dOnly(u.qeyd)} · Son giriş: ${dOnly(u.son)}</small>${TU.ren===u.tel?`<div class="tren"><label>Ad<input id="ra-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ')[0])}"></label><label>Soyad<input id="rs-${t}" value="${esc((u.nm||(u.ad+' '+u.soyad)).split(' ').slice(1).join(' '))}"></label><label>Nömrə (+994-dən sonra)<input id="rt-${t}" inputmode="tel" value="${esc(u.tel2||u.tel)}"></label><div class="row" style="justify-content:flex-start;margin:0"><button class="tbtn ok" onclick="tRen('${t}')">Yadda saxla</button>${u.nm||u.tel2?`<button class="tbtn" onclick="tRen('${t}',1)">Qeydiyyatdakına qaytar</button>`:''}<button class="tbtn" onclick="TU.ren='';tUsers()">Ləğv et</button></div><small>Şagirdin girişi dəyişmir — düzəliş yalnız sizin paneldə görünür.</small></div>`:''}</span><button class="tbtn" title="Düzəlt" onclick="TU.ren=TU.ren==='${t}'?'':'${t}';tUsers()">✏️</button><a class="tbtn" href="tel:+994${esc(u.tel2||u.tel)}">📞</a><a class="tbtn ok" href="https://wa.me/994${esc(u.tel2||u.tel)}${u.blok&&waTpl()?'?text='+encodeURIComponent(waTxt(u)):''}" target="_blank" rel="noopener" onclick="${u.blok&&waTpl()?`waMark('${t}',1)`:`tWa('${t}')`}">💬${u.blok&&waTpl()?'📝':''}</a>${u.blok?`<button class="tbtn${waSent(u.tel)?' ok':''}" onclick="waMark('${t}')">${waSent(u.tel)?'✅ Göndərilib':'☐ Göndərildi'}</button>`:''}<button class="tbtn${isPaid(u)?'':' ok'}" onclick="tSet('elaqe','${t}',${!isPaid(u)})">${isPaid(u)?'↺ Ödənişi geri al':'💳 Ödəniş edib'}</button><button class="tbtn ${u.blok?'ok':'rm'}" onclick="tSet('block','${t}',${!u.blok})">${u.blok?'✅ Bloku aç':'🚫 Blokla'}</button><button class="tbtn rm" onclick="tDel('${t}',this)">🗑 Sil</button></div>`}).join('')+(rows.length?'':'<p class="note">Bu filtrdə heç kim yoxdur.</p>')+`</div></div>`;
   if(window._tqKeep&&document.getElementById('tuRes')){window._tqKeep=0;const T=document.createElement('div');T.innerHTML=h;document.getElementById('tuRes').innerHTML=T.querySelector('#tuRes').innerHTML;return}window._tqKeep=0;app.innerHTML=h;window.scrollTo(0,same?y:0);
 }
 /* bir klik: ekranda dərhal dəyişir (sual yoxdur, səhifə sürüşmür), sonra cədvələ yazılır; alınmasa geri qaytarılır */
@@ -2067,6 +2071,26 @@ function waTplHTML(n){const t=waTpl(),k=Object.keys(lsGet('hc14-wasent',{})).len
   <textarea id="watpl" rows="5" placeholder="Məs: Salam, {ad}! English 1–4-də hesabınız bloklanıb. Davam etmək üçün…">${esc(t)}</textarea>
   <div class="row" style="justify-content:flex-start;margin:0 12px 8px"><button class="tbtn ok" onclick="waTplSave()">💾 Yadda saxla</button>${t?'<button class="tbtn" onclick="waTplSave(1)">🗑 Şablonu sil</button>':''}</div><small>Şablon və ✅ işarələri bu cihazda saxlanılır. Mesaj göndərilənlər: <b>${k}</b>${k?' · <a href="#" onclick="event.preventDefault();lsSet(\'hc14-wasent\',{});tToast(\'İşarələr təmizləndi\');tUsers()">işarələri təmizlə (yeni göndəriş)</a>':''}</small></details>`}
 function waTplSave(del){const v=del?'':String((document.getElementById('watpl')||{}).value||'').trim();lsSet('hc14-watpl',v);TU.tpl=!v;tToast(v?'💾 Şablon yadda saxlandı':'Şablon silindi');tUsers()}
+
+/* 🏷️ Müəllim etiketi: müəllim panelində CK basılıbsa, şagirdin tətbiqində yuxarıda yazı görünür */
+const TAGTX={CK:()=>'Ceyhun müəllimin şagirdlərinə özəl…'};
+function tagShow(v){try{if(v!==undefined&&v!==null){localStorage.setItem('hc14-tg',String(v||''))}}catch(e){}let k='';try{k=localStorage.getItem('hc14-tg')||''}catch(e){}
+  let b=document.getElementById('sbTag');const f=TAGTX[k];
+  if(!f){if(b)b.remove();return}
+  if(!b){b=document.createElement('div');b.id='sbTag';b.setAttribute('role','note');document.body.insertBefore(b,document.body.firstChild)}
+  b.innerHTML='⭐ <b>'+f()+'</b>';
+}
+
+/* 🏷️ CK: Ceyhun müəllimin şagirdi — bir klik qoyur, ikinci klik götürür */
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('.ckb[data-ck]');if(!b)return;e.preventDefault();e.stopPropagation();tTag(b.dataset.ck)},true);
+async function tTag(tel){
+  const key=lsGet('hc14-tkey','');if(!key){tToast('Əvvəlcə panelə daxil olun.');return}
+  const u=(TU.list||[]).find(x=>String(x.tel)===String(tel));if(!u)return;
+  const old=u.tg||'',v=old==='CK'?'':'CK';u.tg=v;tUsers();
+  try{const r=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'tag',key,tel,v})});const o=await r.json();
+    if(!o.ok)throw new Error(o.error||'x');tToast(v?'⭐ CK: Ceyhun müəllimin şagirdi':'CK götürüldü');
+  }catch(e){u.tg=old;tUsers();tToast(String(e&&e.message)==='key'?'Panel açarı səhvdir — çıxış edib yenidən daxil olun.':'Alınmadı. Google Cədvəlin skriptini (Kod.gs) yeniləmisiniz?')}
+}
 async function tSet(a,tel,v){
   const key=lsGet('hc14-tkey','');
   if(!key){tToast('Əvvəlcə panelə şifrə ilə daxil olun.');return}
@@ -2204,4 +2228,5 @@ function boot(){
 }
 boot();
 </script>
+<script>try{tagShow()}catch(e){}</script>
 </body></html>
